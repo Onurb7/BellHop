@@ -1,0 +1,100 @@
+x-app: &app
+  image: bellhop-app
+  env_file: .env
+  depends_on:
+    app:
+      condition: service_started
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks: [bellhop]
+
+services:
+  app:
+    image: bellhop-app
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: prod
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [bellhop]
+    volumes:
+      - storage_app:/var/www/html/storage/app
+
+  worker:
+    <<: *app
+    restart: unless-stopped
+    command: ["php", "artisan", "horizon"]
+    volumes:
+      - storage_app:/var/www/html/storage/app
+
+  scheduler:
+    <<: *app
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: nginx-prod
+    image: bellhop-nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      - app
+    volumes:
+      - storage_app:/var/www/html/storage/app
+    networks: [bellhop]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [bellhop]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [bellhop]
+
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+    networks: [bellhop]
+
+networks:
+  bellhop:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+  storage_app:

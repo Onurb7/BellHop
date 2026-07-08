@@ -1,0 +1,36 @@
+# Auto-loaded alongside docker-compose.yml for local development.
+# Switches the PHP stages to `dev` and bind-mounts source for live reload.
+# A real deploy runs `docker compose -f docker-compose.yml ...` and ignores this file.
+
+services:
+  app:
+    build:
+      target: dev
+    volumes:
+      - .:/var/www/html
+
+  worker:
+    volumes:
+      - .:/var/www/html
+
+  scheduler:
+    volumes:
+      - .:/var/www/html
+
+  nginx:
+    volumes:
+      - .:/var/www/html
+
+  vite:
+    image: node:20-alpine
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    ports:
+      - "5173:5173"
+    networks: [bellhop]
+
+volumes:
+  node_modules:
