@@ -1,59 +1,126 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 🛎️ Bellhop
 
-## About Laravel
+**A single-tenant boutique hotel booking platform — built to demonstrate senior Laravel architecture, not to be a SaaS product.**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
+![Inertia](https://img.shields.io/badge/Inertia.js-v2-9553E9?logo=inertia&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+</div>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## What this is
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Bellhop is a portfolio project: a hotel booking platform for a single
+fictional boutique hotel, built to show how I approach a real Laravel
+application end to end — domain modeling, authorization, background
+processing, and self-managed deployment — rather than to be a generic,
+multi-tenant SaaS. That scope decision is deliberate: another portfolio
+project of mine, SPUD, already demonstrates multi-tenancy, so this one stays
+focused on booking-domain problems and production-grade infrastructure
+instead of repeating that pattern.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Highlights
 
-## Laravel Sponsors
+- **Role-based access control** via [Spatie Permission](https://spatie.be/docs/laravel-permission), with four roles
+  (`super-admin`, `admin`, `staff`, `guest`) and a one-click **"log in as…"
+  demo switcher** on the login page — so anyone reviewing this repo can
+  explore every role's view without needing real credentials.
+  `super-admin` is deliberately excluded from that switcher: the demo
+  account whitelist is a config array that structurally doesn't contain it,
+  not a runtime check that could be bypassed.
+- **Docker Compose for local dev *and* production** — the same
+  multi-stage `Dockerfile` and service topology (nginx, PHP-FPM, Horizon
+  worker, scheduler, Postgres, Redis) runs locally and is what actually
+  ships to a self-managed VPS. No dev/prod drift, no PaaS abstracting the
+  infrastructure away.
+- **Postgres over MySQL on its own merits** — chosen because the
+  deployment target is self-managed, not because of a hosting constraint.
+  The booking domain design (in progress) leans on Postgres-specific
+  features like exclusion constraints to make double-booking a database
+  guarantee, not just an application-level check.
+- **Queued, idempotent background work** via Horizon — PDF invoice
+  generation, transactional email, and (planned) Stripe webhook handling
+  are all designed around at-least-once delivery, not happy-path
+  assumptions.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Tech stack
 
-### Premium Partners
+| Layer | Choice |
+|---|---|
+| Backend | Laravel 12, PHP 8.4 |
+| Frontend | Vue 3 + Inertia.js v2 (SPA-like navigation, no separate API layer) |
+| Styling | Tailwind CSS v4 |
+| Database | PostgreSQL 16 |
+| Cache / Queues | Redis 7 + Laravel Horizon |
+| Auth / RBAC | Spatie Permission |
+| Media | Spatie Media Library |
+| PDF generation | barryvdh/laravel-dompdf |
+| Payments | Stripe (`stripe-php`) |
+| Transactional email | Resend |
+| Local/prod parity | Docker Compose (nginx, PHP-FPM, Postgres, Redis, Horizon, scheduler, Mailpit for dev) |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Current status
 
-## Contributing
+This project is under active development. What's actually shipped vs. what's
+designed but not yet built:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Shipped**
+- Full Docker Compose stack (dev + prod-shaped), documented and reproducible
+  from a clean clone
+- Role-based auth: real email/password login plus the one-click demo
+  switcher described above
+- Design system and the public-facing login/landing pages
 
-## Code of Conduct
+**Designed, not yet built** (see the full domain plan for detail — kept
+outside this repo since it's working notes, not a deliverable)
+- Room/rate inventory and an availability engine backed by a Postgres
+  exclusion constraint
+- A hand-rolled booking state machine (`pending_payment → confirmed →
+  checked_in → checked_out`, with `cancelled`/`no_show` branches)
+- Stripe PaymentIntent flow — full payment or a 30% deposit with an
+  off-session balance charge — with idempotent webhook handling
+- Queued PDF invoice generation and email delivery
+- Scheduled automation (unpaid-hold expiry, no-show sweeps, balance
+  auto-charge)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+I'd rather show a smaller surface area that's actually finished and
+correct than a large one that only looks done.
 
-## Security Vulnerabilities
+## Getting started
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The whole stack runs in Docker — there's no "install PHP locally" step.
+
+```bash
+git clone git@github.com:Onurb7/BellHop.git
+cd BellHop
+
+docker compose up -d --build
+docker compose exec app composer install
+docker run --rm -v "$(pwd)":/app alpine chown -R "$(id -u):$(id -g)" /app
+chmod -R 777 storage bootstrap/cache
+cp .env.example .env
+docker compose exec app php artisan key:generate
+docker compose up -d --force-recreate app worker scheduler nginx
+docker compose exec app php artisan migrate --seed
+```
+
+Then visit:
+
+- **App:** [localhost:8080](http://localhost:8080) — click "Log in", then
+  try the "log in as…" buttons for Admin / Staff / Guest
+- **Mailpit** (catches all outbound dev email): [localhost:8025](http://localhost:8025)
+- **Vite dev server** (HMR, not a page to visit directly): `localhost:5173`
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT — see [LICENSE](LICENSE).
