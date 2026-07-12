@@ -1,7 +1,7 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AppLayout from '../../../Layouts/AppLayout.vue';
 import AmenityBadgePicker from '../../../Components/Admin/AmenityBadgePicker.vue';
 
 const props = defineProps({
@@ -53,8 +53,10 @@ function submit() {
 
 <template>
     <Head :title="isEditing ? 'Edit Room' : 'New Room'" />
-    <AdminLayout>
-        <h1 class="mb-6 font-serif text-3xl">{{ isEditing ? 'Edit Room' : 'New Room' }}</h1>
+    <AppLayout>
+        <template #header>
+            <h1 class="font-serif text-xl">{{ isEditing ? 'Edit Room' : 'New Room' }}</h1>
+        </template>
 
         <form @submit.prevent="submit" class="max-w-2xl space-y-6 rounded-lg border border-gold-500/20 bg-white p-6">
             <div class="grid grid-cols-2 gap-4">
@@ -170,5 +172,5 @@ function submit() {
                 </button>
             </div>
         </form>
-    </AdminLayout>
+    </AppLayout>
 </template>
