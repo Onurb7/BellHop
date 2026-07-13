@@ -1,6 +1,6 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AppLayout from '../../../Layouts/AppLayout.vue';
 
 const props = defineProps({
     service: Object,
@@ -27,8 +27,11 @@ function submit() {
 
 <template>
     <Head :title="isEditing ? 'Edit Service' : 'New Service'" />
-    <AdminLayout>
-        <h1 class="mb-6 font-serif text-3xl">{{ isEditing ? 'Edit Service' : 'New Service' }}</h1>
+    <AppLayout>
+        <template #header>
+            <h1 class="font-serif text-xl">{{ isEditing ? 'Edit Service' : 'New Service' }}</h1>
+        </template>
+
 
         <form @submit.prevent="submit" class="max-w-lg space-y-6 rounded-lg border border-gold-500/20 bg-white p-6">
             <div>
@@ -94,5 +97,5 @@ function submit() {
                 </button>
             </div>
         </form>
-    </AdminLayout>
+    </AppLayout>
 </template>

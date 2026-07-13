@@ -45,9 +45,20 @@ instead of repeating that pattern.
   infrastructure away.
 - **Postgres over MySQL on its own merits** — chosen because the
   deployment target is self-managed, not because of a hosting constraint.
-  The booking domain design (in progress) leans on Postgres-specific
-  features like exclusion constraints to make double-booking a database
-  guarantee, not just an application-level check.
+  The `bookings` table leans on a Postgres exclusion constraint
+  (`EXCLUDE USING gist` over a generated `daterange` column) so a
+  double-booking is a database-level guarantee, not just an
+  application-level check — verified against real overlapping and
+  back-to-back inserts.
+- **Full admin content management** for the room/service catalog — room
+  types, individual rooms (with image uploads via Spatie Media Library,
+  toggleable feature badges, a publish/unpublish flag so unfinished rooms
+  stay hidden from guests, and a "duplicate" action for cloning a room's
+  feature set), and services priced either per-night or as a flat fee.
+- **Staff/admin capacity calendar** — a tape-chart view (rooms × dates,
+  split into AM/PM halves) for front-desk and housekeeping to see
+  check-ins, check-outs, and occupancy at a glance, filterable by floor
+  and viewable by day, week, or month.
 - **Queued, idempotent background work** via Horizon — PDF invoice
   generation, transactional email, and (planned) Stripe webhook handling
   are all designed around at-least-once delivery, not happy-path
@@ -80,13 +91,23 @@ designed but not yet built:
 - Role-based auth: real email/password login plus the one-click demo
   switcher described above
 - Design system and the public-facing login/landing pages
+- Authenticated app shell (sidebar + topbar) shared across all roles, with
+  navigation gated per role
+- Admin CRUD for room types, rooms, services, and amenities — image
+  uploads, feature badges, publish/unpublish, room duplication
+- Booking domain model — `guests`/`bookings` schema with the exclusion
+  constraint described above, seeded with realistic demo data (~55 bookings
+  across past/current/future stays, some rooms deliberately left vacant)
+- Staff/admin capacity calendar (tape chart) described above
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- Room/rate inventory and an availability engine backed by a Postgres
-  exclusion constraint
-- A hand-rolled booking state machine (`pending_payment → confirmed →
-  checked_in → checked_out`, with `cancelled`/`no_show` branches)
+- A guest-facing booking flow — bookings currently exist only as seeded
+  demo data, not created through the app yet
+- A hand-rolled booking state machine with guarded transitions
+  (`pending_payment → confirmed → checked_in → checked_out`, with
+  `cancelled`/`no_show` branches) — the status enum exists, the guarded
+  transition methods don't yet
 - Stripe PaymentIntent flow — full payment or a 30% deposit with an
   off-session balance charge — with idempotent webhook handling
 - Queued PDF invoice generation and email delivery

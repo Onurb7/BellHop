@@ -21,3 +21,14 @@
     --color-gold-800: #6b5330;
     --color-gold-900: #4a3b1f;
 }
+
+/*
+ * Safety net for the authenticated app shell: if a wide scrollable table
+ * (e.g. the calendar's month view) ever pushes layout width past what
+ * AppLayout's flex containers account for, the browser's default white
+ * shows through past their edge. Matching the body background to the
+ * shell's tan means that edge case reads as "more tan," not "a white gap."
+ */
+body {
+    background-color: #faf8f3;
+}

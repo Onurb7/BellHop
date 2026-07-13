@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AppLayout from '../../../Layouts/AppLayout.vue';
 
 defineProps({
     services: Array,
@@ -15,9 +15,12 @@ function destroy(service) {
 
 <template>
     <Head title="Services" />
-    <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="font-serif text-3xl">Services</h1>
+    <AppLayout>
+        <template #header>
+            <h1 class="font-serif text-xl">Services</h1>
+        </template>
+
+        <div class="mb-6 flex justify-end">
             <Link
                 href="/admin/services/create"
                 class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white"
@@ -61,5 +64,5 @@ function destroy(service) {
                 </tbody>
             </table>
         </div>
-    </AdminLayout>
+    </AppLayout>
 </template>
