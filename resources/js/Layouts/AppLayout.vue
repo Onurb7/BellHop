@@ -7,6 +7,8 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const roleNames = computed(() => (user.value?.roles ?? []).map((role) => role.name));
 const isAdmin = computed(() => roleNames.value.some((role) => ['admin', 'super-admin'].includes(role)));
+const isStaffOrAdmin = computed(() => roleNames.value.some((role) => ['staff', 'admin', 'super-admin'].includes(role)));
+const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
 const flashSuccess = computed(() => page.props.flash?.success);
 
 const roomsAndServicesItems = [
@@ -28,6 +30,15 @@ function logout() {
             </div>
 
             <nav class="space-y-1 p-4">
+                <Link
+                    v-if="isStaffOrAdmin"
+                    href="/calendar"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                    :class="isCalendarActive ? 'text-gold-700' : 'text-[#1b1b18]'"
+                >
+                    Calendar
+                </Link>
+
                 <SidebarNavGroup
                     v-if="isAdmin"
                     label="Rooms & Services"
@@ -36,7 +47,7 @@ function logout() {
             </nav>
         </aside>
 
-        <div class="flex flex-1 flex-col">
+        <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-gold-500/20 bg-white px-6 py-4">
                 <div>
                     <slot name="header" />
@@ -57,7 +68,7 @@ function logout() {
                 </div>
             </header>
 
-            <main class="flex-1 p-8">
+            <main class="min-w-0 flex-1 p-8">
                 <div
                     v-if="flashSuccess"
                     class="mb-6 rounded-md border border-gold-500/30 bg-gold-50 px-4 py-2 text-sm text-gold-700"
