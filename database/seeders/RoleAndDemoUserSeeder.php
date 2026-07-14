@@ -17,17 +17,17 @@ class RoleAndDemoUserSeeder extends Seeder
         collect(['super-admin', 'admin', 'staff', 'guest'])
             ->each(fn (string $role) => Role::findOrCreate($role));
 
-        $this->seedUser('Super Admin', config('demo.super_admin'), 'super-admin');
+        $this->seedUser('Super', 'Admin', config('demo.super_admin'), 'super-admin');
 
         foreach (config('demo.accounts') as $role => $account) {
-            $this->seedUser(ucfirst($role).' Demo', $account, $role);
+            $this->seedUser(ucfirst($role), 'Demo', $account, $role);
         }
     }
 
     /**
      * @param  array{email: ?string, password: ?string}  $account
      */
-    private function seedUser(string $name, array $account, string $role): void
+    private function seedUser(string $firstName, string $lastName, array $account, string $role): void
     {
         if (! $account['email'] || ! $account['password']) {
             return;
@@ -35,7 +35,7 @@ class RoleAndDemoUserSeeder extends Seeder
 
         $user = User::updateOrCreate(
             ['email' => $account['email']],
-            ['name' => $name, 'password' => $account['password']],
+            ['first_name' => $firstName, 'last_name' => $lastName, 'password' => $account['password']],
         );
 
         $user->syncRoles([$role]);

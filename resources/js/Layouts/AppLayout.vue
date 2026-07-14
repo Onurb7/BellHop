@@ -1,6 +1,6 @@
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Settings } from '@lucide/vue';
+import { Settings, User as UserIcon } from '@lucide/vue';
 import { computed } from 'vue';
 import SidebarNavGroup from '../Components/SidebarNavGroup.vue';
 
@@ -9,6 +9,7 @@ const user = computed(() => page.props.auth.user);
 const roleNames = computed(() => (user.value?.roles ?? []).map((role) => role.name));
 const isAdmin = computed(() => roleNames.value.some((role) => ['admin', 'super-admin'].includes(role)));
 const isStaffOrAdmin = computed(() => roleNames.value.some((role) => ['staff', 'admin', 'super-admin'].includes(role)));
+const isDashboardActive = computed(() => page.url.startsWith('/dashboard'));
 const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
 const isReservationsActive = computed(() => page.url.startsWith('/reservations'));
 const flashSuccess = computed(() => page.props.flash?.success);
@@ -32,6 +33,14 @@ function logout() {
             </div>
 
             <nav class="space-y-1 p-4">
+                <Link
+                    href="/dashboard"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                    :class="isDashboardActive ? 'text-gold-700' : 'text-[#1b1b18]'"
+                >
+                    Dashboard
+                </Link>
+
                 <Link
                     v-if="isStaffOrAdmin"
                     href="/calendar"
@@ -69,6 +78,13 @@ function logout() {
                         <p class="text-sm font-medium">{{ user?.name }}</p>
                         <p class="text-xs capitalize text-gold-600">{{ roleNames.join(', ') }}</p>
                     </div>
+                    <Link
+                        href="/profile"
+                        title="Profile"
+                        class="rounded-md border border-black/10 p-2 hover:bg-black/5"
+                    >
+                        <UserIcon class="h-4 w-4" />
+                    </Link>
                     <Link
                         href="/settings"
                         title="Settings"
