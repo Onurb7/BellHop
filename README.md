@@ -59,6 +59,22 @@ instead of repeating that pattern.
   split into AM/PM halves) for front-desk and housekeeping to see
   check-ins, check-outs, and occupancy at a glance, filterable by floor
   and viewable by day, week, or month.
+- **Reservations management with an itemized charge ledger** — staff can
+  verify payment, send reservation/payment reminder emails, cancel with a
+  typed ("cancel") confirmation, and change a booking's dates or room. A
+  date/room change is only ever allowed if the resulting total stays at
+  or above what's already been paid — one rule that structurally rules
+  out refunds, since a downgrade just shrinks the balance collected after
+  the stay instead of triggering a payout. Every charge and payment is an
+  append-only ledger row, not a mutable running total, so the numbers can
+  never silently drift out of sync with the itemized history.
+- **Walk-in reservation creation for the front desk** — search a date
+  range, see genuinely available rooms, select one. That selection *is*
+  the lock: it inserts a real booking row that leans on the same Postgres
+  exclusion constraint above, so no separate concurrency mechanism was
+  needed. Guest details are collected on the next step; an abandoned
+  attempt (tab closed mid-flow) is swept lazily on the next search rather
+  than needing a background job.
 - **Queued, idempotent background work** via Horizon — PDF invoice
   generation, transactional email, and (planned) Stripe webhook handling
   are all designed around at-least-once delivery, not happy-path
@@ -96,23 +112,28 @@ designed but not yet built:
 - Admin CRUD for room types, rooms, services, and amenities — image
   uploads, feature badges, publish/unpublish, room duplication
 - Booking domain model — `guests`/`bookings` schema with the exclusion
-  constraint described above, seeded with realistic demo data (~55 bookings
+  constraint described above, seeded with realistic demo data (~76 bookings
   across past/current/future stays, some rooms deliberately left vacant)
 - Staff/admin capacity calendar (tape chart) described above
+- Reservations management and the charge/payment ledger described above
+  (verify payment, reminders, typed-confirmation cancellation, date/room
+  changes)
+- Walk-in reservation creation for staff/admin, described above
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- A guest-facing booking flow — bookings currently exist only as seeded
-  demo data, not created through the app yet
-- A hand-rolled booking state machine with guarded transitions
-  (`pending_payment → confirmed → checked_in → checked_out`, with
-  `cancelled`/`no_show` branches) — the status enum exists, the guarded
-  transition methods don't yet
-- Stripe PaymentIntent flow — full payment or a 30% deposit with an
-  off-session balance charge — with idempotent webhook handling
+- A guest-facing *self-service* booking flow — guests still can't book for
+  themselves; only staff/admin can create a reservation (walk-in) today
+- Real Stripe integration — payment is currently verified manually by
+  staff (cash, card reader, bank transfer), not run through a payment
+  gateway; the deposit/balance split is modeled, the charge is not
+- The rest of the booking state machine — `confirm()`/`cancel()` exist
+  and are guarded, but `checkIn()`/`checkOut()`/`markNoShow()` and their
+  domain events (invoice generation, notification listeners) don't yet
 - Queued PDF invoice generation and email delivery
 - Scheduled automation (unpaid-hold expiry, no-show sweeps, balance
-  auto-charge)
+  auto-charge) — the walk-in lock's own expiry is a lazy sweep on read,
+  not a real scheduled job, which is a fine stopgap but not the end state
 
 I'd rather show a smaller surface area that's actually finished and
 correct than a large one that only looks done.
