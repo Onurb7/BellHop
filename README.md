@@ -74,7 +74,26 @@ instead of repeating that pattern.
   exclusion constraint above, so no separate concurrency mechanism was
   needed. Guest details are collected on the next step; an abandoned
   attempt (tab closed mid-flow) is swept lazily on the next search rather
-  than needing a background job.
+  than needing a background job. The reservations list itself is
+  paginated and searchable, and the date picker rejects invalid
+  check-in/check-out ranges before a search is even attempted.
+- **Staff/admin capacity dashboard** — hand-rolled SVG charts (no
+  charting library) showing today's occupancy/check-in/check-out KPIs, an
+  occupancy trend line toggleable by day/week/month, and average-occupancy
+  breakdowns by weekday and day-of-month, all reading from the same
+  booking data as the calendar and reservations views.
+- **Guest self-service dashboard** — a signed-in guest sees their own
+  active and past reservations (room, dates, status, balance due/paid)
+  pulled from their linked booking history; a guest with no bookings yet
+  gets an honest empty state instead of hotel-wide stats that aren't
+  theirs to see.
+- **Per-user preferences and profile management** — every account can set
+  its own date format (ISO/US/EU, with a dotted-EU variant), time format,
+  and week-start day, and can update its name, email, and password from a
+  dedicated profile page. Guest accounts additionally manage phone and
+  address there, which stays in sync with their linked `guests` record so
+  front-desk staff and the (future) self-service booking flow see the
+  same contact details.
 - **Queued, idempotent background work** via Horizon — PDF invoice
   generation, transactional email, and (planned) Stripe webhook handling
   are all designed around at-least-once delivery, not happy-path
@@ -117,12 +136,16 @@ designed but not yet built:
 - Staff/admin capacity calendar (tape chart) described above
 - Reservations management and the charge/payment ledger described above
   (verify payment, reminders, typed-confirmation cancellation, date/room
-  changes)
+  changes, pagination and search on the list view)
 - Walk-in reservation creation for staff/admin, described above
+- Staff/admin capacity dashboard (occupancy KPIs and charts) described above
+- Guest self-service dashboard (active/past reservations) described above
+- Per-user preferences and profile management described above
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- A guest-facing *self-service* booking flow — guests still can't book for
+- A guest-facing *self-service* booking flow — guests can now see their
+  own reservations on their dashboard, but still can't create one
   themselves; only staff/admin can create a reservation (walk-in) today
 - Real Stripe integration — payment is currently verified manually by
   staff (cash, card reader, bank transfer), not run through a payment
