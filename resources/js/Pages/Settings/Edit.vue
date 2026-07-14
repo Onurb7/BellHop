@@ -42,6 +42,7 @@ function submit() {
                     <option value="iso">YYYY-MM-DD</option>
                     <option value="us">MM/DD/YYYY</option>
                     <option value="eu">DD/MM/YYYY</option>
+                    <option value="eu_dot">DD.MM.YYYY.</option>
                 </select>
                 <p class="mt-1 text-xs opacity-50">Example: {{ dateExample }}</p>
                 <p v-if="form.errors.date_format" class="mt-1 text-sm text-red-600">{{ form.errors.date_format }}</p>

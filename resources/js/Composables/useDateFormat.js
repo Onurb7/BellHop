@@ -10,6 +10,7 @@ export function formatDatePart(isoValue, dateFormat) {
 
     if (dateFormat === 'us') return `${month}/${day}/${year}`;
     if (dateFormat === 'eu') return `${day}/${month}/${year}`;
+    if (dateFormat === 'eu_dot') return `${day}.${month}.${year}.`;
 
     return `${year}-${month}-${day}`;
 }
