@@ -26,34 +26,48 @@ class ReservationController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->string('status')->value() ?: null;
+        $search = $request->string('search')->value() ?: null;
 
         $bookings = Booking::with(['room.roomType', 'guest'])
             ->whereNotNull('guest_id')
             ->withSum('charges as total_cents', 'amount_cents')
             ->withSum('payments as amount_paid_cents', 'amount_cents')
             ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($search, fn ($query) => $query->where(function ($query) use ($search) {
+                $query->whereHas('guest', function ($guestQuery) use ($search) {
+                    $guestQuery->where('first_name', 'ilike', "%{$search}%")
+                        ->orWhere('last_name', 'ilike', "%{$search}%")
+                        ->orWhereRaw("(first_name || ' ' || last_name) ilike ?", ["%{$search}%"]);
+                })->orWhereHas('room', function ($roomQuery) use ($search) {
+                    $roomQuery->where('number', 'ilike', "%{$search}%")
+                        ->orWhereHas('roomType', fn ($typeQuery) => $typeQuery->where('name', 'ilike', "%{$search}%"));
+                });
+            }))
             ->orderByDesc('check_in')
-            ->get()
-            ->map(function (Booking $booking) {
-                $totalCents = (int) ($booking->total_cents ?? 0);
-                $paidCents = (int) ($booking->amount_paid_cents ?? 0);
+            ->paginate(15)
+            ->withQueryString();
 
-                return [
-                    'id' => $booking->id,
-                    'guest_name' => $booking->guest->name,
-                    'room_number' => $booking->room->number,
-                    'room_type' => $booking->room->roomType->name,
-                    'check_in' => $booking->check_in->toDateString(),
-                    'check_out' => $booking->check_out->toDateString(),
-                    'status' => $booking->status->value,
-                    'total_cents' => $totalCents,
-                    'amount_paid_cents' => $paidCents,
-                    'balance_due_cents' => $totalCents - $paidCents,
-                ];
-            });
+        $bookings->through(function (Booking $booking) {
+            $totalCents = (int) ($booking->total_cents ?? 0);
+            $paidCents = (int) ($booking->amount_paid_cents ?? 0);
+
+            return [
+                'id' => $booking->id,
+                'guest_name' => $booking->guest->name,
+                'room_number' => $booking->room->number,
+                'room_type' => $booking->room->roomType->name,
+                'check_in' => $booking->check_in->toDateString(),
+                'check_out' => $booking->check_out->toDateString(),
+                'status' => $booking->status->value,
+                'total_cents' => $totalCents,
+                'amount_paid_cents' => $paidCents,
+                'balance_due_cents' => $totalCents - $paidCents,
+            ];
+        });
 
         return Inertia::render('Reservations/Index', [
             'status' => $status,
+            'search' => $search,
             'statuses' => array_map(fn (BookingStatus $case) => $case->value, BookingStatus::cases()),
             'bookings' => $bookings,
         ]);

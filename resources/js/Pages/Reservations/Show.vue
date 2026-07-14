@@ -4,10 +4,13 @@ import { computed, ref } from 'vue';
 import axios from 'axios';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ConfirmTypedDialog from '../../Components/ConfirmTypedDialog.vue';
+import { useDateFormat } from '../../Composables/useDateFormat.js';
 
 const props = defineProps({
     booking: Object,
 });
+
+const { formatDate, formatDateTime } = useDateFormat();
 
 const statusLabels = {
     pending_payment: 'Pending Payment',
@@ -142,7 +145,7 @@ function applyOption(option) {
                         </div>
                         <div>
                             <dt class="text-xs uppercase tracking-wide opacity-50">Dates</dt>
-                            <dd class="mt-1">{{ booking.check_in }} → {{ booking.check_out }}</dd>
+                            <dd class="mt-1">{{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs uppercase tracking-wide opacity-50">Guest</dt>
@@ -197,7 +200,7 @@ function applyOption(option) {
                         <tbody>
                             <tr v-for="payment in booking.payments" :key="payment.id" class="border-b border-black/5 last:border-0">
                                 <td class="py-2">{{ paymentKindLabels[payment.kind] ?? payment.kind }}</td>
-                                <td class="py-2 opacity-60">{{ payment.verified_at }}</td>
+                                <td class="py-2 opacity-60">{{ formatDateTime(payment.verified_at) }}</td>
                                 <td class="py-2 text-right">{{ money(payment.amount_cents) }}</td>
                             </tr>
                             <tr v-if="booking.payments.length === 0">

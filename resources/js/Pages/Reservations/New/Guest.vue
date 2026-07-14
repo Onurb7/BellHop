@@ -2,10 +2,13 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import { useDateFormat } from '../../../Composables/useDateFormat.js';
 
 const props = defineProps({
     booking: Object,
 });
+
+const { formatDate } = useDateFormat();
 
 const form = useForm({
     first_name: '',
@@ -130,7 +133,7 @@ function cancel() {
                         </div>
                         <div class="flex justify-between">
                             <dt class="opacity-60">Dates</dt>
-                            <dd>{{ booking.check_in }} → {{ booking.check_out }}</dd>
+                            <dd>{{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="opacity-60">Nights</dt>

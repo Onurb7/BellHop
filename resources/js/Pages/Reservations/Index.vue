@@ -1,11 +1,16 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import { useDateFormat } from '../../Composables/useDateFormat.js';
+
+const { formatDate } = useDateFormat();
 
 const props = defineProps({
     status: String,
+    search: String,
     statuses: Array,
-    bookings: Array,
+    bookings: Object,
 });
 
 const statusLabels = {
@@ -26,12 +31,36 @@ const statusBadgeClass = {
     no_show: 'bg-red-100 text-red-700',
 };
 
+const searchInput = ref(props.search ?? '');
+
 function money(cents) {
     return `$${(cents / 100).toFixed(2)}`;
 }
 
 function setStatus(status) {
-    router.get('/reservations', { status: status || undefined }, { preserveState: true, preserveScroll: true });
+    router.get(
+        '/reservations',
+        { status: status || undefined, search: searchInput.value || undefined },
+        { preserveState: true, preserveScroll: true },
+    );
+}
+
+let debounceHandle = null;
+
+watch(searchInput, (value) => {
+    clearTimeout(debounceHandle);
+    debounceHandle = setTimeout(() => {
+        router.get(
+            '/reservations',
+            { status: props.status || undefined, search: value || undefined },
+            { preserveState: true, preserveScroll: true },
+        );
+    }, 300);
+});
+
+function goToPage(url) {
+    if (!url) return;
+    router.visit(url, { preserveState: true, preserveScroll: true });
 }
 </script>
 
@@ -42,7 +71,13 @@ function setStatus(status) {
             <h1 class="font-serif text-xl">Reservations</h1>
         </template>
 
-        <div class="mb-6 flex justify-end">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <input
+                v-model="searchInput"
+                type="text"
+                placeholder="Search guest name, room number, or room type…"
+                class="w-full max-w-sm rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+            />
             <Link
                 href="/reservations/new"
                 class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white"
@@ -87,14 +122,14 @@ function setStatus(status) {
                 </thead>
                 <tbody>
                     <tr
-                        v-for="booking in bookings"
+                        v-for="booking in bookings.data"
                         :key="booking.id"
                         class="cursor-pointer border-b border-black/5 last:border-0 hover:bg-gold-500/10"
                         @click="router.visit(`/reservations/${booking.id}`)"
                     >
                         <td class="px-4 py-3 font-medium">{{ booking.guest_name }}</td>
                         <td class="px-4 py-3">{{ booking.room_number }} <span class="opacity-60">— {{ booking.room_type }}</span></td>
-                        <td class="px-4 py-3">{{ booking.check_in }} → {{ booking.check_out }}</td>
+                        <td class="px-4 py-3">{{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</td>
                         <td class="px-4 py-3">
                             <span class="rounded-full px-2 py-0.5 text-xs" :class="statusBadgeClass[booking.status]">
                                 {{ statusLabels[booking.status] ?? booking.status }}
@@ -108,11 +143,33 @@ function setStatus(status) {
                             </span>
                         </td>
                     </tr>
-                    <tr v-if="bookings.length === 0">
+                    <tr v-if="bookings.data.length === 0">
                         <td colspan="7" class="px-4 py-8 text-center opacity-50">No reservations match this filter.</td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div v-if="bookings.data.length > 0" class="mt-4 flex items-center justify-between text-sm opacity-70">
+            <span>{{ bookings.total }} reservation{{ bookings.total === 1 ? '' : 's' }} — page {{ bookings.current_page }} of {{ bookings.last_page }}</span>
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    :disabled="!bookings.prev_page_url"
+                    @click="goToPage(bookings.prev_page_url)"
+                    class="rounded-md border border-black/10 px-3 py-1.5 hover:bg-black/5 disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                    ‹ Prev
+                </button>
+                <button
+                    type="button"
+                    :disabled="!bookings.next_page_url"
+                    @click="goToPage(bookings.next_page_url)"
+                    class="rounded-md border border-black/10 px-3 py-1.5 hover:bg-black/5 disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                    Next ›
+                </button>
+            </div>
         </div>
     </AppLayout>
 </template>

@@ -12,6 +12,7 @@ use App\Models\Guest;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Service;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -27,6 +28,8 @@ class DemoHotelSeeder extends Seeder
     public function run(): void
     {
         if (Room::exists()) {
+            $this->linkDemoGuestBookings();
+
             return;
         }
 
@@ -68,6 +71,88 @@ class DemoHotelSeeder extends Seeder
 
         foreach ($rooms as $room) {
             $this->seedBookingsForRoom($room);
+        }
+
+        $this->linkDemoGuestBookings();
+    }
+
+    /**
+     * Links the seeded `guest` demo account to a `guests` row and gives
+     * it a past/active/pending-payment stay each, so the guest dashboard
+     * has real data out of the box. Runs on every seed (not just the
+     * first) since it's guarded independently — `Room::exists()` short-
+     * circuits the room/type/booking generation above, but this needs to
+     * backfill onto an already-seeded database too.
+     */
+    private function linkDemoGuestBookings(): void
+    {
+        $account = config('demo.accounts.guest');
+        $user = $account['email'] ? User::where('email', $account['email'])->first() : null;
+
+        if (! $user) {
+            return;
+        }
+
+        $guest = Guest::firstOrCreate(
+            ['user_id' => $user->id],
+            ['first_name' => 'Guest', 'last_name' => 'Demo', 'email' => $user->email],
+        );
+
+        if ($guest->bookings()->exists()) {
+            return;
+        }
+
+        $rooms = Room::with('roomType')->inRandomOrder()->limit(3)->get();
+
+        if ($rooms->count() < 3) {
+            return;
+        }
+
+        // Dates chosen well outside seedBookingsForRoom's today±(10..21)
+        // window so these never collide with the exclusion constraint on
+        // whatever bookings that method already generated for these rooms.
+        $this->createGuestBooking($guest, $rooms[0], Carbon::today()->subDays(45), Carbon::today()->subDays(41), BookingStatus::CheckedOut);
+        $this->createGuestBooking($guest, $rooms[1], Carbon::today()->addDays(35), Carbon::today()->addDays(38), BookingStatus::Confirmed);
+        $this->createGuestBooking($guest, $rooms[2], Carbon::today()->addDays(45), Carbon::today()->addDays(47), BookingStatus::PendingPayment);
+    }
+
+    private function createGuestBooking(Guest $guest, Room $room, Carbon $checkIn, Carbon $checkOut, BookingStatus $status): void
+    {
+        $nights = $checkIn->diffInDays($checkOut);
+        $roomChargeCents = $nights * $room->roomType->base_rate_cents;
+        $depositCents = (int) round($roomChargeCents * 0.3);
+
+        $booking = Booking::create([
+            'room_id' => $room->id,
+            'guest_id' => $guest->id,
+            'check_in' => $checkIn,
+            'check_out' => $checkOut,
+            'status' => $status,
+            'deposit_cents' => $depositCents,
+        ]);
+
+        $booking->charges()->create([
+            'category' => BookingChargeCategory::Room,
+            'description' => "Room charge: {$nights} night(s) at {$room->number}",
+            'amount_cents' => $roomChargeCents,
+        ]);
+
+        if ($status === BookingStatus::PendingPayment) {
+            return;
+        }
+
+        $booking->payments()->create([
+            'kind' => BookingPaymentKind::Deposit,
+            'amount_cents' => $depositCents,
+            'verified_at' => $checkIn->copy()->subDays(fake()->numberBetween(1, 14)),
+        ]);
+
+        if ($status === BookingStatus::CheckedOut) {
+            $booking->payments()->create([
+                'kind' => BookingPaymentKind::Balance,
+                'amount_cents' => $roomChargeCents - $depositCents,
+                'verified_at' => $checkOut->copy(),
+            ]);
         }
     }
 
