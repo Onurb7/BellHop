@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BookingChargeCategory;
+use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Enums\ServicePricingType;
 use App\Models\Amenity;
@@ -89,18 +91,53 @@ class DemoHotelSeeder extends Seeder
 
             $checkIn = $cursor->copy();
             $checkOut = $checkIn->copy()->addDays(fake()->numberBetween(1, 5));
+            $nights = $checkIn->diffInDays($checkOut);
+            $roomChargeCents = $nights * $room->roomType->base_rate_cents;
+            $depositCents = (int) round($roomChargeCents * 0.3);
 
-            Booking::create([
+            $status = match (true) {
+                $checkOut->lte(Carbon::today()) => BookingStatus::CheckedOut,
+                $checkIn->gt(Carbon::today()) => BookingStatus::Confirmed,
+                default => BookingStatus::CheckedIn,
+            };
+
+            // Occasionally leave a still-upcoming booking awaiting its
+            // deposit, so the Reservations page's "Verify Payment" action
+            // has something real to demonstrate out of the box.
+            if ($status === BookingStatus::Confirmed && fake()->boolean(17)) {
+                $status = BookingStatus::PendingPayment;
+            }
+
+            $booking = Booking::create([
                 'room_id' => $room->id,
                 'guest_id' => Guest::factory()->create()->id,
                 'check_in' => $checkIn,
                 'check_out' => $checkOut,
-                'status' => match (true) {
-                    $checkOut->lte(Carbon::today()) => BookingStatus::CheckedOut,
-                    $checkIn->gt(Carbon::today()) => BookingStatus::Confirmed,
-                    default => BookingStatus::CheckedIn,
-                },
+                'status' => $status,
+                'deposit_cents' => $depositCents,
             ]);
+
+            $booking->charges()->create([
+                'category' => BookingChargeCategory::Room,
+                'description' => "Room charge: {$nights} night(s) at {$room->number}",
+                'amount_cents' => $roomChargeCents,
+            ]);
+
+            if ($status !== BookingStatus::PendingPayment) {
+                $booking->payments()->create([
+                    'kind' => BookingPaymentKind::Deposit,
+                    'amount_cents' => $depositCents,
+                    'verified_at' => $checkIn->copy()->subDays(fake()->numberBetween(1, 14)),
+                ]);
+
+                if ($status === BookingStatus::CheckedOut) {
+                    $booking->payments()->create([
+                        'kind' => BookingPaymentKind::Balance,
+                        'amount_cents' => $roomChargeCents - $depositCents,
+                        'verified_at' => $checkOut->copy(),
+                    ]);
+                }
+            }
 
             $cursor = $checkOut->copy();
         }
