@@ -9,6 +9,7 @@ const roleNames = computed(() => (user.value?.roles ?? []).map((role) => role.na
 const isAdmin = computed(() => roleNames.value.some((role) => ['admin', 'super-admin'].includes(role)));
 const isStaffOrAdmin = computed(() => roleNames.value.some((role) => ['staff', 'admin', 'super-admin'].includes(role)));
 const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
+const isReservationsActive = computed(() => page.url.startsWith('/reservations'));
 const flashSuccess = computed(() => page.props.flash?.success);
 
 const roomsAndServicesItems = [
@@ -37,6 +38,15 @@ function logout() {
                     :class="isCalendarActive ? 'text-gold-700' : 'text-[#1b1b18]'"
                 >
                     Calendar
+                </Link>
+
+                <Link
+                    v-if="isStaffOrAdmin"
+                    href="/reservations"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                    :class="isReservationsActive ? 'text-gold-700' : 'text-[#1b1b18]'"
+                >
+                    Reservations
                 </Link>
 
                 <SidebarNavGroup
