@@ -9,6 +9,7 @@ use App\Enums\RoomStatus;
 use App\Mail\PaymentReminderMail;
 use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
+use App\Models\Guest;
 use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -27,6 +28,7 @@ class ReservationController extends Controller
         $status = $request->string('status')->value() ?: null;
 
         $bookings = Booking::with(['room.roomType', 'guest'])
+            ->whereNotNull('guest_id')
             ->withSum('charges as total_cents', 'amount_cents')
             ->withSum('payments as amount_paid_cents', 'amount_cents')
             ->when($status, fn ($query) => $query->where('status', $status))
@@ -55,6 +57,174 @@ class ReservationController extends Controller
             'statuses' => array_map(fn (BookingStatus $case) => $case->value, BookingStatus::cases()),
             'bookings' => $bookings,
         ]);
+    }
+
+    public function newSearch(Request $request): Response
+    {
+        $this->sweepExpiredDrafts();
+
+        $checkIn = $request->filled('check_in') ? Carbon::parse($request->string('check_in')->value()) : null;
+        $checkOut = $request->filled('check_out') ? Carbon::parse($request->string('check_out')->value()) : null;
+        $guests = $request->filled('guests') ? $request->integer('guests') : null;
+
+        $rooms = [];
+
+        if ($checkIn && $checkOut && $checkOut->gt($checkIn)) {
+            $nights = $checkIn->diffInDays($checkOut);
+
+            $roomsQuery = Room::with('roomType')
+                ->where('status', RoomStatus::Active->value)
+                ->orderBy('number');
+
+            if ($guests) {
+                $roomsQuery->whereHas('roomType', fn ($query) => $query->where('max_occupancy', '>=', $guests));
+            }
+
+            foreach ($roomsQuery->get() as $room) {
+                if (! $this->roomIsAvailable($room->id, $checkIn, $checkOut)) {
+                    continue;
+                }
+
+                $rooms[] = [
+                    'room_id' => $room->id,
+                    'room_number' => $room->number,
+                    'floor' => $room->floor,
+                    'room_type_id' => $room->room_type_id,
+                    'room_type_name' => $room->roomType->name,
+                    'max_occupancy' => $room->roomType->max_occupancy,
+                    'nightly_rate_cents' => $room->roomType->base_rate_cents,
+                    'total_cents' => $nights * $room->roomType->base_rate_cents,
+                ];
+            }
+        }
+
+        return Inertia::render('Reservations/New/Search', [
+            'check_in' => $checkIn?->toDateString(),
+            'check_out' => $checkOut?->toDateString(),
+            'guests' => $guests,
+            'nights' => $checkIn && $checkOut ? $checkIn->diffInDays($checkOut) : null,
+            'rooms' => $rooms,
+        ]);
+    }
+
+    public function lock(Request $request): RedirectResponse
+    {
+        $this->sweepExpiredDrafts();
+
+        $data = $request->validate([
+            'room_id' => ['required', 'integer', 'exists:rooms,id'],
+            'check_in' => ['required', 'date'],
+            'check_out' => ['required', 'date', 'after:check_in'],
+        ]);
+
+        $checkIn = Carbon::parse($data['check_in']);
+        $checkOut = Carbon::parse($data['check_out']);
+
+        if (! $this->roomIsAvailable((int) $data['room_id'], $checkIn, $checkOut)) {
+            return back()->withErrors(['room_id' => 'That room was just taken — please pick another.']);
+        }
+
+        try {
+            $booking = Booking::create([
+                'room_id' => $data['room_id'],
+                'guest_id' => null,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'status' => BookingStatus::PendingPayment,
+                'expires_at' => now()->addMinutes(15),
+            ]);
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[0] ?? null) === '23P01') {
+                return back()->withErrors(['room_id' => 'That room was just taken — please pick another.']);
+            }
+
+            throw $exception;
+        }
+
+        return redirect()->route('reservations.new.guest', $booking);
+    }
+
+    public function newGuestForm(Booking $booking): RedirectResponse|Response
+    {
+        if (! $this->isLiveDraft($booking)) {
+            return redirect()->route('reservations.new.search')
+                ->with('error', 'That hold has expired or was already completed — please search again.');
+        }
+
+        $booking->loadMissing('room.roomType');
+        $nights = $booking->check_in->diffInDays($booking->check_out);
+        $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+
+        return Inertia::render('Reservations/New/Guest', [
+            'booking' => [
+                'id' => $booking->id,
+                'check_in' => $booking->check_in->toDateString(),
+                'check_out' => $booking->check_out->toDateString(),
+                'expires_at' => $booking->expires_at->toIso8601String(),
+                'nights' => $nights,
+                'total_cents' => $roomChargeCents,
+                'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                'room' => [
+                    'number' => $booking->room->number,
+                    'room_type' => $booking->room->roomType->name,
+                ],
+            ],
+        ]);
+    }
+
+    public function storeGuest(Booking $booking, Request $request): RedirectResponse
+    {
+        if (! $this->isLiveDraft($booking)) {
+            return redirect()->route('reservations.new.search')
+                ->with('error', 'That hold has expired or was already completed — please search again.');
+        }
+
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $guest = Guest::firstOrCreate(
+            ['email' => $data['email']],
+            [
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+            ],
+        );
+
+        $booking->loadMissing('room.roomType');
+        $nights = $booking->check_in->diffInDays($booking->check_out);
+        $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+
+        DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights) {
+            $booking->update([
+                'guest_id' => $guest->id,
+                'expires_at' => null,
+                'deposit_cents' => (int) round($roomChargeCents * 0.3),
+            ]);
+
+            $booking->charges()->create([
+                'category' => BookingChargeCategory::Room,
+                'description' => "Room charge: {$nights} night(s) at {$booking->room->number}",
+                'amount_cents' => $roomChargeCents,
+            ]);
+        });
+
+        return redirect()->route('reservations.show', $booking)->with('success', 'Reservation created.');
+    }
+
+    public function abandon(Booking $booking): RedirectResponse
+    {
+        if ($booking->guest_id === null) {
+            $booking->delete();
+        }
+
+        return redirect()->route('reservations.new.search');
     }
 
     public function show(Booking $booking): Response
@@ -320,13 +490,42 @@ class ReservationController extends Controller
         return redirect()->route('reservations.show', $booking)->with('success', 'Reservation updated.');
     }
 
-    private function roomIsAvailable(int $roomId, Carbon $checkIn, Carbon $checkOut, int $excludingBookingId): bool
+    private function roomIsAvailable(int $roomId, Carbon $checkIn, Carbon $checkOut, ?int $excludingBookingId = null): bool
     {
         return ! Booking::where('room_id', $roomId)
-            ->where('id', '!=', $excludingBookingId)
+            ->when($excludingBookingId, fn ($query) => $query->where('id', '!=', $excludingBookingId))
             ->whereNotIn('status', [BookingStatus::Cancelled->value, BookingStatus::NoShow->value])
             ->where('check_in', '<', $checkOut)
             ->where('check_out', '>', $checkIn)
             ->exists();
+    }
+
+    /**
+     * Deletes any walk-in draft (a pending_payment booking with no guest
+     * attached yet — see "Walk-in reservation creation" in the domain
+     * plan) whose lock has expired, so the room becomes searchable again
+     * without needing a scheduled job.
+     */
+    private function sweepExpiredDrafts(): void
+    {
+        Booking::whereNull('guest_id')
+            ->where('status', BookingStatus::PendingPayment)
+            ->where('expires_at', '<', now())
+            ->delete();
+    }
+
+    private function isLiveDraft(Booking $booking): bool
+    {
+        if ($booking->guest_id !== null) {
+            return false;
+        }
+
+        if ($booking->expires_at !== null && $booking->expires_at->isPast()) {
+            $booking->delete();
+
+            return false;
+        }
+
+        return true;
     }
 }
