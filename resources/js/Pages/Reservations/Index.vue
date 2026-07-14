@@ -42,6 +42,15 @@ function setStatus(status) {
             <h1 class="font-serif text-xl">Reservations</h1>
         </template>
 
+        <div class="mb-6 flex justify-end">
+            <Link
+                href="/reservations/new"
+                class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white"
+            >
+                + New Reservation
+            </Link>
+        </div>
+
         <div class="mb-6 flex flex-wrap gap-2">
             <button
                 type="button"

@@ -9,6 +9,15 @@ Route::middleware(['auth', 'role:staff|admin|super-admin'])
         Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
 
         Route::prefix('reservations')->name('reservations.')->group(function () {
+            // Registered before the /{booking} routes below — otherwise
+            // Laravel's route-model binding tries to resolve "new" as a
+            // Booking ID and 404s.
+            Route::get('/new', [ReservationController::class, 'newSearch'])->name('new.search');
+            Route::post('/new/lock', [ReservationController::class, 'lock'])->name('new.lock');
+            Route::get('/new/{booking}/guest', [ReservationController::class, 'newGuestForm'])->name('new.guest');
+            Route::post('/new/{booking}/guest', [ReservationController::class, 'storeGuest'])->name('new.guest.store');
+            Route::delete('/new/{booking}', [ReservationController::class, 'abandon'])->name('new.abandon');
+
             Route::get('/', [ReservationController::class, 'index'])->name('index');
             Route::get('/{booking}', [ReservationController::class, 'show'])->name('show');
             Route::post('/{booking}/verify-payment', [ReservationController::class, 'verifyPayment'])->name('verify-payment');

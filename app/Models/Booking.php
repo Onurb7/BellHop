@@ -22,6 +22,7 @@ class Booking extends Model
         'deposit_cents',
         'last_reminder_sent_at',
         'last_reminder_type',
+        'expires_at',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class Booking extends Model
             'check_out' => 'date',
             'status' => BookingStatus::class,
             'last_reminder_sent_at' => 'datetime',
+            'expires_at' => 'datetime',
         ];
     }
 
