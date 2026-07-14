@@ -1,5 +1,6 @@
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
+import { Settings } from '@lucide/vue';
 import { computed } from 'vue';
 import SidebarNavGroup from '../Components/SidebarNavGroup.vue';
 
@@ -68,6 +69,13 @@ function logout() {
                         <p class="text-sm font-medium">{{ user?.name }}</p>
                         <p class="text-xs capitalize text-gold-600">{{ roleNames.join(', ') }}</p>
                     </div>
+                    <Link
+                        href="/settings"
+                        title="Settings"
+                        class="rounded-md border border-black/10 p-2 hover:bg-black/5"
+                    >
+                        <Settings class="h-4 w-4" />
+                    </Link>
                     <button
                         type="button"
                         @click="logout"

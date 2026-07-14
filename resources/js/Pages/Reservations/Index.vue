@@ -2,6 +2,9 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import { useDateFormat } from '../../Composables/useDateFormat.js';
+
+const { formatDate } = useDateFormat();
 
 const props = defineProps({
     status: String,
@@ -126,7 +129,7 @@ function goToPage(url) {
                     >
                         <td class="px-4 py-3 font-medium">{{ booking.guest_name }}</td>
                         <td class="px-4 py-3">{{ booking.room_number }} <span class="opacity-60">— {{ booking.room_type }}</span></td>
-                        <td class="px-4 py-3">{{ booking.check_in }} → {{ booking.check_out }}</td>
+                        <td class="px-4 py-3">{{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</td>
                         <td class="px-4 py-3">
                             <span class="rounded-full px-2 py-0.5 text-xs" :class="statusBadgeClass[booking.status]">
                                 {{ statusLabels[booking.status] ?? booking.status }}

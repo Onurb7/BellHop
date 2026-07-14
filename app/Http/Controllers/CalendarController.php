@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WeekStart;
 use App\Models\Booking;
 use App\Models\Room;
 use Carbon\Carbon;
@@ -21,10 +22,14 @@ class CalendarController extends Controller
             ? Carbon::parse($request->string('date')->value())
             : Carbon::today();
 
+        $weekStart = $request->user()->getSetting('week_start', WeekStart::Monday->value) === WeekStart::Sunday->value
+            ? Carbon::SUNDAY
+            : Carbon::MONDAY;
+
         [$rangeStart, $rangeEnd] = match ($view) {
             'day' => [$anchor->copy()->startOfDay(), $anchor->copy()->addDay()->startOfDay()],
             'month' => [$anchor->copy()->startOfMonth(), $anchor->copy()->startOfMonth()->addMonth()],
-            default => [$anchor->copy()->startOfWeek(Carbon::MONDAY), $anchor->copy()->startOfWeek(Carbon::MONDAY)->addWeek()],
+            default => [$anchor->copy()->startOfWeek($weekStart), $anchor->copy()->startOfWeek($weekStart)->addWeek()],
         };
 
         $floor = $request->string('floor')->value() ?: null;

@@ -2,6 +2,9 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import { useDateFormat } from '../../Composables/useDateFormat.js';
+
+const { formatDate } = useDateFormat();
 
 const props = defineProps({
     view: String,
@@ -180,7 +183,7 @@ function setFloor(event) {
                 <button type="button" @click="shift(-1)" class="rounded-md border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5">‹</button>
                 <button type="button" @click="goToday" class="rounded-md border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5">Today</button>
                 <button type="button" @click="shift(1)" class="rounded-md border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5">›</button>
-                <span class="ml-2 text-sm opacity-70">{{ rangeStart }} – {{ rangeEnd }}</span>
+                <span class="ml-2 text-sm opacity-70">{{ formatDate(rangeStart) }} – {{ formatDate(rangeEnd) }}</span>
             </div>
 
             <div class="flex items-center gap-3">

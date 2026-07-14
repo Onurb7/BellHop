@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -46,5 +47,20 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function settings(): HasMany
+    {
+        return $this->hasMany(UserSetting::class);
+    }
+
+    /**
+     * Reads $this->settings (not a fresh query) so repeated calls in the
+     * same request — e.g. reading date/time/week-start preferences one
+     * after another — cost a single query, not one per key.
+     */
+    public function getSetting(string $key, ?string $default = null): ?string
+    {
+        return $this->settings->firstWhere('key', $key)?->value ?? $default;
     }
 }
