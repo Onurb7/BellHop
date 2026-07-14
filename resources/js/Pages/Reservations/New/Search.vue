@@ -20,7 +20,18 @@ function money(cents) {
     return `$${(cents / 100).toFixed(2)}`;
 }
 
+const dateError = computed(() => {
+    if (!checkIn.value || !checkOut.value) {
+        return '';
+    }
+    return checkOut.value <= checkIn.value ? 'Check-out must be after check-in.' : '';
+});
+
 function search() {
+    if (dateError.value) {
+        return;
+    }
+
     router.get(
         '/reservations/new',
         {
@@ -70,6 +81,7 @@ const searched = computed(() => props.check_in && props.check_out);
                     <input
                         v-model="checkOut"
                         type="date"
+                        :min="checkIn || undefined"
                         class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     />
                 </div>
@@ -85,12 +97,14 @@ const searched = computed(() => props.check_in && props.check_out);
                 </div>
                 <button
                     type="button"
+                    :disabled="!!dateError"
                     @click="search"
-                    class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white"
+                    class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
                     Search Availability
                 </button>
             </div>
+            <p v-if="dateError" class="mt-2 text-sm text-red-600">{{ dateError }}</p>
         </div>
 
         <div v-if="searched" class="mt-6">
