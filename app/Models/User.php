@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -52,6 +53,16 @@ class User extends Authenticatable
     public function settings(): HasMany
     {
         return $this->hasMany(UserSetting::class);
+    }
+
+    /**
+     * A `guest` role account's matching row in `guests` (the person a
+     * booking is actually for) — nullable because it's only set once
+     * this account has been linked to a stay, not on every guest user.
+     */
+    public function guest(): HasOne
+    {
+        return $this->hasOne(Guest::class);
     }
 
     /**
