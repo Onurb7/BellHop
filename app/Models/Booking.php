@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use RuntimeException;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Booking extends Model
+class Booking extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     protected $fillable = [
         'room_id',
@@ -23,6 +26,8 @@ class Booking extends Model
         'last_reminder_sent_at',
         'last_reminder_type',
         'expires_at',
+        'invoice_number',
+        'invoice_generated_at',
     ];
 
     protected function casts(): array
@@ -33,7 +38,13 @@ class Booking extends Model
             'status' => BookingStatus::class,
             'last_reminder_sent_at' => 'datetime',
             'expires_at' => 'datetime',
+            'invoice_generated_at' => 'datetime',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('invoice')->singleFile();
     }
 
     public function room(): BelongsTo
@@ -77,6 +88,39 @@ class Booking extends Model
     public function balanceDueCents(): int
     {
         return $this->totalCents() - $this->amountPaidCents();
+    }
+
+    public function hasInvoice(): bool
+    {
+        return $this->invoice_generated_at !== null;
+    }
+
+    /**
+     * What payment is next due — deposit, then balance, then any
+     * additional amount still owed — shared by the staff manual-verify
+     * flow and the guest Stripe payment flow so the "which kind, how
+     * much" logic exists in exactly one place.
+     *
+     * @return array{kind: BookingPaymentKind, amount_cents: int}
+     */
+    public function nextPaymentKind(): array
+    {
+        $payments = $this->relationLoaded('payments') ? $this->payments : $this->payments()->get();
+
+        $hasDeposit = $payments->contains(fn (BookingPayment $payment) => $payment->kind === BookingPaymentKind::Deposit);
+        $hasBalance = $payments->contains(fn (BookingPayment $payment) => $payment->kind === BookingPaymentKind::Balance);
+
+        $kind = match (true) {
+            ! $hasDeposit => BookingPaymentKind::Deposit,
+            ! $hasBalance => BookingPaymentKind::Balance,
+            default => BookingPaymentKind::Additional,
+        };
+
+        $amountCents = $kind === BookingPaymentKind::Deposit
+            ? ($this->deposit_cents ?? $this->totalCents())
+            : $this->balanceDueCents();
+
+        return ['kind' => $kind, 'amount_cents' => $amountCents];
     }
 
     public function confirm(): void

@@ -17,6 +17,7 @@
     "dependencies": {
         "@inertiajs/vue3": "^3.6.1",
         "@lucide/vue": "^1.23.0",
+        "@stripe/stripe-js": "^4.10.0",
         "@vitejs/plugin-vue": "^6.0.7",
         "vue": "^3.5.39"
     }

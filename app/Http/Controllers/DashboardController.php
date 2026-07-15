@@ -97,15 +97,22 @@ class DashboardController extends Controller
                     'total_cents' => $totalCents,
                     'amount_paid_cents' => $paidCents,
                     'balance_due_cents' => $totalCents - $paidCents,
+                    'invoice_generated_at' => $booking->invoice_generated_at?->toIso8601String(),
                 ];
             });
+
+        $pastStatuses = [
+            BookingStatus::CheckedOut->value,
+            BookingStatus::Cancelled->value,
+            BookingStatus::NoShow->value,
+        ];
 
         return [
             'active' => $bookings->whereIn('status', $activeStatuses)
                 ->sortBy('check_in')
                 ->values()
                 ->all(),
-            'past' => $bookings->where('status', BookingStatus::CheckedOut->value)
+            'past' => $bookings->whereIn('status', $pastStatuses)
                 ->sortByDesc('check_out')
                 ->values()
                 ->all(),

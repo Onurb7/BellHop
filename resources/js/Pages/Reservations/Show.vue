@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import axios from 'axios';
+import { FileText } from '@lucide/vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ConfirmTypedDialog from '../../Components/ConfirmTypedDialog.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
@@ -34,12 +35,14 @@ const chargeCategoryLabels = {
     room: 'Room charge',
     date_change: 'Date change',
     room_change: 'Room change',
+    refund: 'Refund',
 };
 
 const paymentKindLabels = {
     deposit: 'Deposit',
     balance: 'Balance',
     additional: 'Additional payment',
+    refund: 'Refund',
 };
 
 function money(cents) {
@@ -79,6 +82,16 @@ function cancelReservation() {
         `/reservations/${props.booking.id}/cancel`,
         { confirmation: 'cancel' },
         { onFinish: () => (showCancelDialog.value = false) },
+    );
+}
+
+const refundingPayment = ref(null);
+
+function refundPayment(payment) {
+    router.post(
+        `/reservations/${props.booking.id}/payments/${payment.id}/refund`,
+        {},
+        { preserveScroll: true, onFinish: () => (refundingPayment.value = null) },
     );
 }
 
@@ -188,23 +201,44 @@ function applyOption(option) {
                 </div>
 
                 <div class="rounded-lg border border-gold-500/20 bg-white p-6">
-                    <h2 class="font-serif text-lg">Payments</h2>
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-serif text-lg">Payments</h2>
+                        <a
+                            v-if="booking.invoice_generated_at"
+                            :href="`/invoices/${booking.id}`"
+                            class="inline-flex items-center gap-1.5 text-sm text-gold-700 hover:underline"
+                        >
+                            <FileText class="h-4 w-4" />
+                            Download Invoice
+                        </a>
+                    </div>
                     <table class="mt-3 w-full text-left text-sm">
                         <thead class="border-b border-black/10 text-xs uppercase tracking-wide opacity-50">
                             <tr>
                                 <th class="py-2">Kind</th>
                                 <th class="py-2">Verified</th>
                                 <th class="py-2 text-right">Amount</th>
+                                <th class="py-2"></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="payment in booking.payments" :key="payment.id" class="border-b border-black/5 last:border-0">
                                 <td class="py-2">{{ paymentKindLabels[payment.kind] ?? payment.kind }}</td>
                                 <td class="py-2 opacity-60">{{ formatDateTime(payment.verified_at) }}</td>
-                                <td class="py-2 text-right">{{ money(payment.amount_cents) }}</td>
+                                <td class="py-2 text-right" :class="payment.amount_cents < 0 ? 'text-red-600' : ''">{{ money(payment.amount_cents) }}</td>
+                                <td class="py-2 text-right">
+                                    <button
+                                        v-if="payment.refundable"
+                                        type="button"
+                                        @click="refundingPayment = payment"
+                                        class="text-xs text-red-600 hover:underline"
+                                    >
+                                        Refund
+                                    </button>
+                                </td>
                             </tr>
                             <tr v-if="booking.payments.length === 0">
-                                <td colspan="3" class="py-4 text-center opacity-50">No payments recorded yet.</td>
+                                <td colspan="4" class="py-4 text-center opacity-50">No payments recorded yet.</td>
                             </tr>
                         </tbody>
                         <tfoot>
@@ -213,6 +247,7 @@ function applyOption(option) {
                                 <td class="py-2 text-right" :class="booking.balance_due_cents > 0 ? 'text-red-600' : ''">
                                     {{ money(booking.balance_due_cents) }}
                                 </td>
+                                <td class="py-2"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -354,6 +389,15 @@ function applyOption(option) {
             confirm-word="cancel"
             @confirm="cancelReservation"
             @close="showCancelDialog = false"
+        />
+
+        <ConfirmTypedDialog
+            :open="refundingPayment !== null"
+            title="Refund this payment?"
+            message="This issues a real refund via Stripe back to the guest's card."
+            confirm-word="refund"
+            @confirm="refundPayment(refundingPayment)"
+            @close="refundingPayment = null"
         />
     </AppLayout>
 </template>

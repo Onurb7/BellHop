@@ -74,11 +74,42 @@ instead of repeating that pattern.
   exclusion constraint above, so no separate concurrency mechanism was
   needed. Guest details are collected on the next step; an abandoned
   attempt (tab closed mid-flow) is swept lazily on the next search rather
-  than needing a background job.
-- **Queued, idempotent background work** via Horizon — PDF invoice
-  generation, transactional email, and (planned) Stripe webhook handling
-  are all designed around at-least-once delivery, not happy-path
-  assumptions.
+  than needing a background job. The reservations list itself is
+  paginated and searchable, and the date picker rejects invalid
+  check-in/check-out ranges before a search is even attempted.
+- **Staff/admin capacity dashboard** — hand-rolled SVG charts (no
+  charting library) showing today's occupancy/check-in/check-out KPIs, an
+  occupancy trend line toggleable by day/week/month, and average-occupancy
+  breakdowns by weekday and day-of-month, all reading from the same
+  booking data as the calendar and reservations views.
+- **Guest self-service dashboard** — a signed-in guest sees their own
+  active and past reservations (room, dates, status, balance due/paid)
+  pulled from their linked booking history; a guest with no bookings yet
+  gets an honest empty state instead of hotel-wide stats that aren't
+  theirs to see.
+- **Per-user preferences and profile management** — every account can set
+  its own date format (ISO/US/EU, with a dotted-EU variant), time format,
+  and week-start day, and can update its name, email, and password from a
+  dedicated profile page. Guest accounts additionally manage phone and
+  address there, which stays in sync with their linked `guests` record so
+  front-desk staff and the (future) self-service booking flow see the
+  same contact details.
+- **Real Stripe payments, refunds, and PDF invoicing** — guests pay their
+  own deposit/balance via an embedded Stripe Card Element on their own
+  reservation page; a webhook handler backed by an idempotency ledger
+  (`stripe_webhook_events`, per the domain plan's original design) is the
+  single source of truth for confirming payment, never the client-side
+  callback. Staff can issue a real Stripe refund on a cancelled
+  reservation, which reverses both the payment *and* an equal-and-opposite
+  ledger charge — the same signed-delta pattern already used for
+  date/room changes — so the balance settles cleanly back to $0.00
+  instead of drifting. A queued job renders a PDF invoice via dompdf,
+  emails it, and regenerates it (reusing the same invoice number,
+  without re-sending the email) whenever a later refund changes the
+  numbers, so a downloaded invoice never goes stale.
+- **Queued background work** via Horizon — PDF invoice generation and
+  reminder emails run as queued jobs, not inline in the request, so a
+  slow mail send or PDF render never blocks the response.
 
 ## Tech stack
 
@@ -117,23 +148,28 @@ designed but not yet built:
 - Staff/admin capacity calendar (tape chart) described above
 - Reservations management and the charge/payment ledger described above
   (verify payment, reminders, typed-confirmation cancellation, date/room
-  changes)
+  changes, pagination and search on the list view)
 - Walk-in reservation creation for staff/admin, described above
+- Staff/admin capacity dashboard (occupancy KPIs and charts) described above
+- Guest self-service dashboard (active/past reservations) described above
+- Per-user preferences and profile management described above
+- Real Stripe payments, refunds, and PDF invoicing described above — a
+  guest can pay off an existing reservation themselves and download the
+  resulting invoice; staff can refund a cancelled one
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- A guest-facing *self-service* booking flow — guests still can't book for
-  themselves; only staff/admin can create a reservation (walk-in) today
-- Real Stripe integration — payment is currently verified manually by
-  staff (cash, card reader, bank transfer), not run through a payment
-  gateway; the deposit/balance split is modeled, the charge is not
+- A guest-facing *self-service* booking-creation flow — guests can now
+  pay for and view their own reservations, but still can't create a new
+  one themselves; only staff/admin can create a reservation (walk-in) today
 - The rest of the booking state machine — `confirm()`/`cancel()` exist
   and are guarded, but `checkIn()`/`checkOut()`/`markNoShow()` and their
-  domain events (invoice generation, notification listeners) don't yet
-- Queued PDF invoice generation and email delivery
-- Scheduled automation (unpaid-hold expiry, no-show sweeps, balance
-  auto-charge) — the walk-in lock's own expiry is a lazy sweep on read,
-  not a real scheduled job, which is a fine stopgap but not the end state
+  domain events don't yet
+- Scheduled automation (unpaid-hold expiry, no-show sweeps, automatic
+  balance charging before check-in) — the walk-in lock's own expiry is a
+  lazy sweep on read, not a real scheduled job, which is a fine stopgap
+  but not the end state; balance payment today is guest- or
+  staff-initiated, not automatically charged on a schedule
 
 I'd rather show a smaller surface area that's actually finished and
 correct than a large one that only looks done.

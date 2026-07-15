@@ -1,5 +1,5 @@
 <script setup>
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { BedDouble, CalendarRange, CalendarX, CircleCheck, History, Receipt, Wallet } from '@lucide/vue';
 import AppLayout from '../Layouts/AppLayout.vue';
@@ -133,10 +133,11 @@ function setTrendView(view) {
                     </h3>
 
                     <div v-if="reservations.active.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div
+                        <Link
                             v-for="booking in reservations.active"
                             :key="booking.id"
-                            class="rounded-lg border border-gold-500/20 bg-white p-5"
+                            :href="`/my-reservations/${booking.id}`"
+                            class="block rounded-lg border border-gold-500/20 bg-white p-5 transition hover:border-gold-500/40 hover:shadow-sm"
                         >
                             <div class="mb-4 flex items-start justify-between gap-2">
                                 <div class="flex items-center gap-3">
@@ -169,7 +170,7 @@ function setTrendView(view) {
                                     {{ booking.balance_due_cents > 0 ? `${money(booking.balance_due_cents)} due` : 'Paid in full' }}
                                 </span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
 
                     <div v-else class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-black/10 bg-white p-10 text-center">
@@ -185,23 +186,29 @@ function setTrendView(view) {
                     </h3>
 
                     <div v-if="reservations.past.length" class="grid gap-3 sm:grid-cols-2">
-                        <div
+                        <Link
                             v-for="booking in reservations.past"
                             :key="booking.id"
-                            class="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-4"
+                            :href="`/my-reservations/${booking.id}`"
+                            class="flex items-center gap-3 rounded-lg border border-black/10 bg-white p-4 transition hover:border-gold-500/40 hover:shadow-sm"
                         >
                             <div class="rounded-md bg-black/5 p-2 text-black/50">
                                 <BedDouble class="h-4 w-4" />
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium">{{ booking.room_type }} — Room {{ booking.room_number }}</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="truncate text-sm font-medium">{{ booking.room_type }} — Room {{ booking.room_number }}</p>
+                                    <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px]" :class="statusBadgeClass[booking.status]">
+                                        {{ statusLabels[booking.status] ?? booking.status }}
+                                    </span>
+                                </div>
                                 <p class="text-xs opacity-50">{{ formatDate(booking.check_in) }} – {{ formatDate(booking.check_out) }}</p>
                             </div>
                             <div class="flex shrink-0 items-center gap-1 text-xs opacity-60">
                                 <Receipt class="h-3.5 w-3.5" />
-                                {{ money(booking.total_cents) }}
+                                {{ money(booking.amount_paid_cents) }}
                             </div>
-                        </div>
+                        </Link>
                     </div>
 
                     <div v-else class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-black/10 bg-white p-10 text-center">
