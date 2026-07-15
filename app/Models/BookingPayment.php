@@ -12,6 +12,8 @@ class BookingPayment extends Model
         'booking_id',
         'kind',
         'amount_cents',
+        'stripe_payment_intent_id',
+        'stripe_refund_id',
         'verified_by',
         'verified_at',
         'note',

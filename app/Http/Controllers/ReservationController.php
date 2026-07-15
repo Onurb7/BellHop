@@ -250,6 +250,12 @@ class ReservationController extends Controller
             'payments' => fn ($query) => $query->orderBy('created_at'),
         ]);
 
+        $refundedIntentIds = $booking->payments
+            ->where('kind', BookingPaymentKind::Refund)
+            ->pluck('stripe_payment_intent_id')
+            ->filter()
+            ->all();
+
         return Inertia::render('Reservations/Show', [
             'booking' => [
                 'id' => $booking->id,
@@ -262,6 +268,7 @@ class ReservationController extends Controller
                 'total_cents' => $booking->totalCents(),
                 'amount_paid_cents' => $booking->amountPaidCents(),
                 'balance_due_cents' => $booking->balanceDueCents(),
+                'invoice_generated_at' => $booking->invoice_generated_at?->toIso8601String(),
                 'guest' => [
                     'id' => $booking->guest->id,
                     'name' => $booking->guest->name,
@@ -287,6 +294,10 @@ class ReservationController extends Controller
                     'kind' => $payment->kind->value,
                     'amount_cents' => $payment->amount_cents,
                     'verified_at' => $payment->verified_at->toDateTimeString(),
+                    'refundable' => $booking->status === BookingStatus::Cancelled
+                        && $payment->kind !== BookingPaymentKind::Refund
+                        && $payment->stripe_payment_intent_id !== null
+                        && ! in_array($payment->stripe_payment_intent_id, $refundedIntentIds, true),
                 ]),
             ],
         ]);
@@ -296,18 +307,7 @@ class ReservationController extends Controller
     {
         $booking->loadMissing('payments');
 
-        $hasDeposit = $booking->payments->contains(fn ($payment) => $payment->kind === BookingPaymentKind::Deposit);
-        $hasBalance = $booking->payments->contains(fn ($payment) => $payment->kind === BookingPaymentKind::Balance);
-
-        $kind = match (true) {
-            ! $hasDeposit => BookingPaymentKind::Deposit,
-            ! $hasBalance => BookingPaymentKind::Balance,
-            default => BookingPaymentKind::Additional,
-        };
-
-        $amount = $kind === BookingPaymentKind::Deposit
-            ? ($booking->deposit_cents ?? $booking->totalCents())
-            : $booking->balanceDueCents();
+        ['kind' => $kind, 'amount_cents' => $amount] = $booking->nextPaymentKind();
 
         if ($amount <= 0) {
             return back()->with('success', 'Nothing is currently due on this reservation.');
