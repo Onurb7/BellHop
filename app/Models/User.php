@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\SetPasswordMail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -80,5 +82,19 @@ class User extends Authenticatable
     public function getSetting(string $key, ?string $default = null): ?string
     {
         return $this->settings->firstWhere('key', $key)?->value ?? $default;
+    }
+
+    /**
+     * Overrides the default `Illuminate\Auth\Notifications\ResetPassword`
+     * notification — every other email in this app is a hand-styled
+     * Mailable (gold theme, Bellhop header), not a framework Notification,
+     * so this keeps password-reset/set-up email visually consistent with
+     * the rest. Used both for a genuine "forgot password" request and,
+     * proactively, right after a public self-service booking creates a
+     * brand-new account.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        Mail::to($this->email)->send(new SetPasswordMail($this, $token));
     }
 }

@@ -6,11 +6,16 @@ use App\Enums\BookingChargeCategory;
 use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Jobs\GenerateBookingInvoice;
+use App\Mail\ExistingAccountMail;
 use App\Models\Booking;
 use App\Models\BookingPayment;
 use App\Models\StripeWebhookEvent;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
 use UnexpectedValueException;
@@ -80,9 +85,51 @@ class StripeWebhookController extends Controller
             $booking->confirm();
         }
 
+        $this->provisionGuestAccount($booking);
+
         if ($booking->fresh()->balanceDueCents() <= 0) {
             GenerateBookingInvoice::dispatch($booking);
         }
+    }
+
+    /**
+     * Only ever reached for a Stripe-paid booking whose guest has no
+     * linked user yet — an already-authenticated guest paying via
+     * GuestReservationController always has one, and a walk-in booking's
+     * manual "Verify Payment" never touches Stripe at all — so this is,
+     * by construction, only ever the public self-service flow.
+     */
+    private function provisionGuestAccount(Booking $booking): void
+    {
+        $booking->loadMissing('guest');
+        $guest = $booking->guest;
+
+        if ($guest === null || $guest->user_id !== null) {
+            return;
+        }
+
+        $existingUser = User::where('email', $guest->email)->first();
+
+        if ($existingUser) {
+            // Never auto-linked — an unauthenticated checkout proving it
+            // knows someone's email isn't proof it's really them.
+            Mail::to($guest->email)->send(new ExistingAccountMail($booking));
+
+            return;
+        }
+
+        $user = User::create([
+            'first_name' => $guest->first_name,
+            'last_name' => $guest->last_name,
+            'email' => $guest->email,
+            // Unusable until they follow the password-setup email below.
+            'password' => Str::random(40),
+        ]);
+
+        $user->syncRoles(['guest']);
+        $guest->update(['user_id' => $user->id]);
+
+        Password::sendResetLink(['email' => $user->email]);
     }
 
     /**

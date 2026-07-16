@@ -31,3 +31,4 @@ require __DIR__.'/staff.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/profile.php';
 require __DIR__.'/webhooks.php';
+require __DIR__.'/public.php';

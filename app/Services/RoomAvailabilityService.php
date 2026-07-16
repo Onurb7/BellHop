@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\BookingStatus;
+use App\Enums\RoomStatus;
+use App\Exceptions\RoomUnavailableException;
+use App\Models\Booking;
+use App\Models\Room;
+use Carbon\Carbon;
+use Illuminate\Database\QueryException;
+
+/**
+ * Shared by the staff walk-in flow (ReservationController) and the
+ * public self-service booking flow (Public\BookingController) — both
+ * need the exact same exclusion-constraint-aware availability search
+ * and locking mechanics, just wrapped in different response shapes.
+ */
+class RoomAvailabilityService
+{
+    /**
+     * @return array<int, array{room_id: int, room_number: string, floor: string, room_type_id: int, room_type_name: string, max_occupancy: int, nightly_rate_cents: int, total_cents: int}>
+     */
+    public function searchAvailableRooms(Carbon $checkIn, Carbon $checkOut, ?int $guests = null): array
+    {
+        $nights = $checkIn->diffInDays($checkOut);
+
+        $roomsQuery = Room::with('roomType')
+            ->where('status', RoomStatus::Active->value)
+            ->orderBy('number');
+
+        if ($guests) {
+            $roomsQuery->whereHas('roomType', fn ($query) => $query->where('max_occupancy', '>=', $guests));
+        }
+
+        $rooms = [];
+
+        foreach ($roomsQuery->get() as $room) {
+            if (! $this->isAvailable($room->id, $checkIn, $checkOut)) {
+                continue;
+            }
+
+            $rooms[] = [
+                'room_id' => $room->id,
+                'room_number' => $room->number,
+                'floor' => $room->floor,
+                'room_type_id' => $room->room_type_id,
+                'room_type_name' => $room->roomType->name,
+                'max_occupancy' => $room->roomType->max_occupancy,
+                'nightly_rate_cents' => $room->roomType->base_rate_cents,
+                'total_cents' => $nights * $room->roomType->base_rate_cents,
+            ];
+        }
+
+        return $rooms;
+    }
+
+    public function isAvailable(int $roomId, Carbon $checkIn, Carbon $checkOut, ?int $excludingBookingId = null): bool
+    {
+        return ! Booking::where('room_id', $roomId)
+            ->when($excludingBookingId, fn ($query) => $query->where('id', '!=', $excludingBookingId))
+            ->whereNotIn('status', [BookingStatus::Cancelled->value, BookingStatus::NoShow->value])
+            ->where('check_in', '<', $checkOut)
+            ->where('check_out', '>', $checkIn)
+            ->exists();
+    }
+
+    /**
+     * Creates a pending_payment hold on a room. The isAvailable() check
+     * above is just a friendly pre-check for the common case — the
+     * Postgres exclusion constraint on `bookings` is the actual source
+     * of truth against a concurrent race, caught here as a 23P01 error.
+     *
+     * @throws RoomUnavailableException
+     */
+    public function lock(int $roomId, Carbon $checkIn, Carbon $checkOut, int $holdMinutes = 15): Booking
+    {
+        if (! $this->isAvailable($roomId, $checkIn, $checkOut)) {
+            throw new RoomUnavailableException;
+        }
+
+        try {
+            return Booking::create([
+                'room_id' => $roomId,
+                'guest_id' => null,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'status' => BookingStatus::PendingPayment,
+                'expires_at' => now()->addMinutes($holdMinutes),
+            ]);
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[0] ?? null) === '23P01') {
+                throw new RoomUnavailableException;
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Deletes any draft (a pending_payment booking with no guest attached
+     * yet — walk-in or public self-service) whose lock has expired, so
+     * the room becomes searchable again without needing a scheduled job.
+     */
+    public function sweepExpiredDrafts(): void
+    {
+        Booking::whereNull('guest_id')
+            ->where('status', BookingStatus::PendingPayment)
+            ->where('expires_at', '<', now())
+            ->delete();
+    }
+
+    public function isLiveDraft(Booking $booking): bool
+    {
+        if ($booking->guest_id !== null) {
+            return false;
+        }
+
+        if ($booking->expires_at !== null && $booking->expires_at->isPast()) {
+            $booking->delete();
+
+            return false;
+        }
+
+        return true;
+    }
+}
