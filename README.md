@@ -126,6 +126,14 @@ instead of repeating that pattern.
 - **Queued background work** via Horizon — PDF invoice generation and
   reminder emails run as queued jobs, not inline in the request, so a
   slow mail send or PDF render never blocks the response.
+- **Automated test coverage for the crucial, bug-prone paths** —
+  deliberately not exhaustive: 5 Pest feature tests covering
+  availability/locking, the charge/payment ledger math, the Stripe
+  webhook handler (idempotency, payment confirmation, refund-netting),
+  and the guest-account auto-linking security rule, plus one Vitest test
+  for the only frontend component with real payment-handling logic.
+  Tests run against a real Postgres test database, not SQLite — SQLite
+  can't create the `bookings` table's exclusion constraint at all.
 
 ## Tech stack
 
@@ -176,6 +184,8 @@ designed but not yet built:
   visitor can browse rooms, book, pay the deposit, and get auto-logged
   into a provisioned account, with no staff involvement; a full
   password-reset/set-password flow shipped alongside it
+- Automated test coverage described above (Pest backend, one Vitest
+  frontend test)
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
@@ -215,6 +225,14 @@ Then visit:
   try the "log in as…" buttons for Admin / Staff / Guest
 - **Mailpit** (catches all outbound dev email): [localhost:8025](http://localhost:8025)
 - **Vite dev server** (HMR, not a page to visit directly): `localhost:5173`
+
+## Running tests
+
+```bash
+docker compose exec postgres createdb -U bellhop bellhop_testing   # one-time
+docker compose exec app php artisan test        # backend (Pest)
+docker compose exec vite npm run test:js        # frontend (Vitest)
+```
 
 ## License
 
