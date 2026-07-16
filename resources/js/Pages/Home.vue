@@ -10,22 +10,32 @@ defineProps({
 <template>
     <Head title="Home" />
 
-    <div class="relative min-h-screen overflow-hidden bg-white">
-        <HeroPhoto class="absolute inset-0 h-full w-full" />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+    <div class="relative h-screen overflow-hidden bg-white">
+        <div class="absolute inset-0 h-full w-full">
+            <HeroPhoto />
+        </div>
+        <div class="absolute inset-0 bg-black/40" />
 
-        <div class="relative z-10 flex min-h-screen items-center justify-center px-4">
-            <div class="max-w-lg text-center">
-                <p class="text-xs uppercase tracking-[0.35em] text-gold-300">Est. Boutique Hospitality</p>
-                <h1 class="mt-4 font-serif text-5xl text-white sm:text-6xl">🛎️ Bellhop</h1>
-                <p class="mt-4 text-lg text-gold-100/80">{{ message }}</p>
+        <div class="relative z-10 flex h-full items-center justify-center px-4">
+            <div class="w-full max-w-sm rounded-lg border border-gold-500/25 bg-white p-8 text-center shadow-xl shadow-black/20">
+                <p class="text-xs uppercase tracking-[0.35em] text-gold-600">Est. Boutique Hospitality</p>
+                <h1 class="mt-4 font-serif text-4xl sm:text-5xl">🛎️ Bellhop</h1>
+                <p class="mt-4 text-sm opacity-70">{{ message }}</p>
 
-                <Link
-                    href="/login"
-                    class="mt-8 inline-block rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3 text-sm font-medium tracking-wide text-white shadow-lg transition hover:opacity-90"
-                >
-                    Enter the Lobby
-                </Link>
+                <div class="mt-8 flex flex-col gap-3">
+                    <Link
+                        href="/rooms"
+                        class="rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3 text-sm font-medium tracking-wide text-white shadow-sm transition hover:opacity-90"
+                    >
+                        Book Your Stay
+                    </Link>
+                    <Link
+                        href="/login"
+                        class="rounded-md border border-gold-500/30 px-6 py-3 text-sm font-medium tracking-wide transition hover:bg-gold-500/10"
+                    >
+                        Enter the Lobby
+                    </Link>
+                </div>
             </div>
         </div>
     </div>

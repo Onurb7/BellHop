@@ -92,8 +92,8 @@ instead of repeating that pattern.
   and week-start day, and can update its name, email, and password from a
   dedicated profile page. Guest accounts additionally manage phone and
   address there, which stays in sync with their linked `guests` record so
-  front-desk staff and the (future) self-service booking flow see the
-  same contact details.
+  front-desk staff and the self-service booking flow below see the same
+  contact details.
 - **Real Stripe payments, refunds, and PDF invoicing** — guests pay their
   own deposit/balance via an embedded Stripe Card Element on their own
   reservation page; a webhook handler backed by an idempotency ledger
@@ -107,6 +107,22 @@ instead of repeating that pattern.
   emails it, and regenerates it (reusing the same invoice number,
   without re-sending the email) whenever a later refund changes the
   numbers, so a downloaded invoice never goes stale.
+- **Public self-service booking, with no account required up front** — an
+  anonymous visitor browses a published room catalog (`/rooms`), picks
+  dates, locks a room (the same exclusion-constraint-backed hold the
+  walk-in flow uses, extracted into a shared `RoomAvailabilityService` so
+  both flows stay behavior-identical), enters their details, and pays the
+  deposit through the same embedded Stripe Card Element. Only once
+  payment succeeds does an account get provisioned: a brand-new email
+  gets an account created and the visitor is auto-logged straight into
+  their reservation via a Laravel signed URL (never a guessable booking
+  ID); an email that already belongs to an account is deliberately
+  **never auto-linked** — the booking stays an unlinked guest record and
+  the visitor is emailed to log in instead, so typing someone else's
+  email can never attach a booking to their account. This also closed a
+  real gap in the app: there was previously no password-reset flow at
+  all, for any account — the new "set your password" email and a genuine
+  "forgot password" recovery path share the same underlying broker.
 - **Queued background work** via Horizon — PDF invoice generation and
   reminder emails run as queued jobs, not inline in the request, so a
   slow mail send or PDF render never blocks the response.
@@ -156,12 +172,13 @@ designed but not yet built:
 - Real Stripe payments, refunds, and PDF invoicing described above — a
   guest can pay off an existing reservation themselves and download the
   resulting invoice; staff can refund a cancelled one
+- Public self-service booking flow described above — an anonymous
+  visitor can browse rooms, book, pay the deposit, and get auto-logged
+  into a provisioned account, with no staff involvement; a full
+  password-reset/set-password flow shipped alongside it
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- A guest-facing *self-service* booking-creation flow — guests can now
-  pay for and view their own reservations, but still can't create a new
-  one themselves; only staff/admin can create a reservation (walk-in) today
 - The rest of the booking state machine — `confirm()`/`cancel()` exist
   and are guarded, but `checkIn()`/`checkOut()`/`markNoShow()` and their
   domain events don't yet

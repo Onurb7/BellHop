@@ -8,7 +8,7 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Home', [
-        'message' => 'Vue 3 + Inertia is wired up and rendering through Docker.',
+        'message' => 'New here? Book your stay. Already a guest? Enter the lobby.',
     ]);
 });
 
@@ -31,3 +31,4 @@ require __DIR__.'/staff.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/profile.php';
 require __DIR__.'/webhooks.php';
+require __DIR__.'/public.php';

@@ -1,36 +1,28 @@
 <script setup>
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import HeroPhoto from '../../Components/HeroPhoto.vue';
 
 const props = defineProps({
-    demoLoginEnabled: Boolean,
+    token: String,
+    email: String,
 });
 
 const form = useForm({
-    email: '',
+    token: props.token,
+    email: props.email ?? '',
     password: '',
-    remember: false,
+    password_confirmation: '',
 });
 
 const submit = () => {
-    form.post('/login', {
-        onFinish: () => form.reset('password'),
+    form.post('/reset-password', {
+        onFinish: () => form.reset('password', 'password_confirmation'),
     });
-};
-
-const demoAccounts = [
-    { role: 'admin', label: 'Admin' },
-    { role: 'staff', label: 'Staff' },
-    { role: 'guest', label: 'Guest' },
-];
-
-const loginAs = (role) => {
-    router.post(`/login-as/${role}`);
 };
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Set Your Password" />
 
     <div class="relative min-h-screen bg-white text-[#1b1b18]">
         <div
@@ -45,7 +37,7 @@ const loginAs = (role) => {
                 <div class="mb-8 text-center">
                     <p class="text-xs uppercase tracking-[0.35em] text-gold-600">Est. Boutique Hospitality</p>
                     <h1 class="mt-3 font-serif text-4xl text-[#1b1b18]">🛎️ Bellhop</h1>
-                    <p class="mt-2 text-sm opacity-60">Sign in to manage your stay</p>
+                    <p class="mt-2 text-sm opacity-60">Set your password</p>
                 </div>
 
                 <div class="rounded-lg border border-gold-500/25 bg-white p-6 shadow-sm shadow-gold-900/5">
@@ -56,7 +48,6 @@ const loginAs = (role) => {
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                autofocus
                                 autocomplete="username"
                                 class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                             />
@@ -64,23 +55,27 @@ const loginAs = (role) => {
                         </div>
 
                         <div>
-                            <label for="password" class="block text-sm font-medium mb-1">Password</label>
+                            <label for="password" class="block text-sm font-medium mb-1">New password</label>
                             <input
                                 id="password"
                                 v-model="form.password"
                                 type="password"
-                                autocomplete="current-password"
+                                autofocus
+                                autocomplete="new-password"
                                 class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                             />
                             <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
                         </div>
 
-                        <div class="flex items-center justify-between text-sm">
-                            <label class="flex items-center gap-2">
-                                <input v-model="form.remember" type="checkbox" class="accent-gold-500" />
-                                Remember me
-                            </label>
-                            <Link href="/forgot-password" class="text-gold-600 hover:underline">Forgot password?</Link>
+                        <div>
+                            <label for="password_confirmation" class="block text-sm font-medium mb-1">Confirm password</label>
+                            <input
+                                id="password_confirmation"
+                                v-model="form.password_confirmation"
+                                type="password"
+                                autocomplete="new-password"
+                                class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                            />
                         </div>
 
                         <button
@@ -88,33 +83,9 @@ const loginAs = (role) => {
                             :disabled="form.processing"
                             class="w-full rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-3 py-2 text-sm font-medium tracking-wide text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
                         >
-                            Log in
+                            Set password
                         </button>
                     </form>
-
-                    <template v-if="demoLoginEnabled">
-                        <div class="my-6 flex items-center gap-3 text-xs uppercase tracking-wide opacity-50">
-                            <div class="h-px flex-1 bg-gold-500/30" />
-                            Try it as a demo
-                            <div class="h-px flex-1 bg-gold-500/30" />
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-2">
-                            <button
-                                v-for="account in demoAccounts"
-                                :key="account.role"
-                                type="button"
-                                @click="loginAs(account.role)"
-                                class="rounded-md border border-gold-500/30 px-3 py-2 text-sm hover:bg-gold-500/10"
-                            >
-                                {{ account.label }}
-                            </button>
-                        </div>
-                    </template>
-
-                    <p class="mt-6 text-center text-sm opacity-60">
-                        New here? <Link href="/rooms" class="text-gold-600 hover:underline">Book a stay</Link> — no account needed.
-                    </p>
                 </div>
             </div>
         </div>
