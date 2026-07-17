@@ -13,30 +13,21 @@
                     </tr>
                     <tr>
                         <td style="font-size:15px; line-height:1.6; padding-bottom:20px;">
-                            There's an outstanding balance on your reservation with us.
+                            We weren't able to collect the remaining balance on your reservation,
+                            so it has been cancelled and the room released.
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color:#fbf6ec; border-radius:6px; padding:16px 20px; font-size:14px; line-height:1.8;">
                             <strong>Room:</strong> {{ $booking->room->roomType->name }} — {{ $booking->room->number }}<br>
                             <strong>Check-in:</strong> {{ $booking->check_in->format('l, F j, Y') }}<br>
-                            <strong>Check-out:</strong> {{ $booking->check_out->format('l, F j, Y') }}<br>
-                            <strong>Balance due:</strong> ${{ number_format($balanceDueCents / 100, 2) }}
+                            <strong>Check-out:</strong> {{ $booking->check_out->format('l, F j, Y') }}
                         </td>
                     </tr>
-                    @if($willAutoCancel)
-                    <tr>
-                        <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#a33b1e;">
-                            <strong>Please note:</strong> if this balance isn't settled within the
-                            next 24 hours, your reservation will be automatically cancelled and the
-                            room released.
-                        </td>
-                    </tr>
-                    @endif
                     <tr>
                         <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#6b5330;">
-                            Please settle this balance with the front desk at your earliest
-                            convenience. Reach out if you have any questions.
+                            If this was a mistake or you'd still like to stay with us, please get in
+                            touch with the front desk and we'll do our best to help.
                         </td>
                     </tr>
                 </table>

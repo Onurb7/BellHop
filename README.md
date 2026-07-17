@@ -123,6 +123,31 @@ instead of repeating that pattern.
   real gap in the app: there was previously no password-reset flow at
   all, for any account — the new "set your password" email and a genuine
   "forgot password" recovery path share the same underlying broker.
+- **A complete booking lifecycle, driven by real scheduled jobs** — the
+  state machine now goes all the way to `checkIn()`/`checkOut()` (staff
+  actions) and `markNoShow()` (a nightly sweep), and five real Artisan
+  commands run on the `scheduler` service instead of sitting idle:
+  abandoned public checkouts get cancelled automatically instead of
+  blocking a room forever, past-due confirmed stays with no check-in
+  become no-shows, and — for deposit-plan bookings — the remaining room
+  balance is due 3 days before check-in. A booking made within 3 days of
+  check-in skips the deposit split entirely and requires full payment up
+  front, since there'd be no time left for any of this to run. A
+  checked-out booking with a balance still owed (e.g. incidentals) gets a
+  reminder email every morning until it's settled.
+- **Real, opt-in consent for saving a card** — at deposit time, the guest
+  sees an unchecked-by-default checkbox before anything is ever saved:
+  check it, and the remaining balance is charged off-session automatically
+  on the due date, using Stripe's opaque `payment_method`/`customer`
+  tokens (the card itself is never stored in this app's database, and
+  Stripe stays PCI-compliant on our behalf); leave it unchecked, and the
+  booking still gets the deposit-plan discount, but the guest gets an
+  automatic email reminder — warning of the 24-hour cancellation window
+  below — instead and pays manually from their own dashboard. Either way,
+  if the balance is still unpaid 24 hours after collection was attempted
+  — a declined auto-charge or an ignored reminder — the booking is
+  automatically cancelled and the room released for resale, rather than
+  sitting blocked all the way through the stay.
 - **Queued background work** via Horizon — PDF invoice generation and
   reminder emails run as queued jobs, not inline in the request, so a
   slow mail send or PDF render never blocks the response.
@@ -186,17 +211,17 @@ designed but not yet built:
   password-reset/set-password flow shipped alongside it
 - Automated test coverage described above (Pest backend, one Vitest
   frontend test)
+- The complete booking state machine and scheduled automation described
+  above — `checkIn()`/`checkOut()`/`markNoShow()`, expired-hold cleanup,
+  no-show sweeps, and off-session balance auto-charging, all running on
+  the `scheduler` service
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
-- The rest of the booking state machine — `confirm()`/`cancel()` exist
-  and are guarded, but `checkIn()`/`checkOut()`/`markNoShow()` and their
-  domain events don't yet
-- Scheduled automation (unpaid-hold expiry, no-show sweeps, automatic
-  balance charging before check-in) — the walk-in lock's own expiry is a
-  lazy sweep on read, not a real scheduled job, which is a fine stopgap
-  but not the end state; balance payment today is guest- or
-  staff-initiated, not automatically charged on a schedule
+- Amenities/services attached to a booking (`booking_services`) — the
+  `services` catalog exists and is admin-manageable, but nothing lets a
+  guest or staff member actually add one to a stay yet, so there's
+  nothing to bill at checkout beyond the room itself
 
 I'd rather show a smaller surface area that's actually finished and
 correct than a large one that only looks done.

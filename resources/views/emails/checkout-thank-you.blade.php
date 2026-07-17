@@ -13,30 +13,20 @@
                     </tr>
                     <tr>
                         <td style="font-size:15px; line-height:1.6; padding-bottom:20px;">
-                            There's an outstanding balance on your reservation with us.
+                            Thank you for staying with us. It was a pleasure hosting you, and we
+                            hope to welcome you back soon.
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color:#fbf6ec; border-radius:6px; padding:16px 20px; font-size:14px; line-height:1.8;">
                             <strong>Room:</strong> {{ $booking->room->roomType->name }} — {{ $booking->room->number }}<br>
                             <strong>Check-in:</strong> {{ $booking->check_in->format('l, F j, Y') }}<br>
-                            <strong>Check-out:</strong> {{ $booking->check_out->format('l, F j, Y') }}<br>
-                            <strong>Balance due:</strong> ${{ number_format($balanceDueCents / 100, 2) }}
+                            <strong>Check-out:</strong> {{ $booking->check_out->format('l, F j, Y') }}
                         </td>
                     </tr>
-                    @if($willAutoCancel)
-                    <tr>
-                        <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#a33b1e;">
-                            <strong>Please note:</strong> if this balance isn't settled within the
-                            next 24 hours, your reservation will be automatically cancelled and the
-                            room released.
-                        </td>
-                    </tr>
-                    @endif
                     <tr>
                         <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#6b5330;">
-                            Please settle this balance with the front desk at your earliest
-                            convenience. Reach out if you have any questions.
+                            Safe travels, and we hope to see you again.
                         </td>
                     </tr>
                 </table>

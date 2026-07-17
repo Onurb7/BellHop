@@ -11,6 +11,7 @@ use App\Models\Booking;
 use App\Models\BookingPayment;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use App\Services\StripePaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
@@ -22,7 +23,7 @@ use UnexpectedValueException;
 
 class StripeWebhookController extends Controller
 {
-    public function handle(Request $request): Response
+    public function handle(Request $request, StripePaymentService $stripe): Response
     {
         try {
             $event = Webhook::constructEvent(
@@ -48,7 +49,7 @@ class StripeWebhookController extends Controller
         }
 
         match ($event->type) {
-            'payment_intent.succeeded' => $this->handlePaymentSucceeded($event->data->object),
+            'payment_intent.succeeded' => $this->handlePaymentSucceeded($event->data->object, $stripe),
             'refund.updated' => $this->handleRefundUpdated($event->data->object),
             default => null,
         };
@@ -58,7 +59,7 @@ class StripeWebhookController extends Controller
         return response('OK', 200);
     }
 
-    private function handlePaymentSucceeded(\Stripe\PaymentIntent $intent): void
+    private function handlePaymentSucceeded(\Stripe\PaymentIntent $intent, StripePaymentService $stripe): void
     {
         $bookingId = $intent->metadata['booking_id'] ?? null;
         $kind = $intent->metadata['kind'] ?? null;
@@ -85,11 +86,51 @@ class StripeWebhookController extends Controller
             $booking->confirm();
         }
 
+        if (BookingPaymentKind::from($kind) === BookingPaymentKind::Deposit) {
+            $this->scheduleBalanceCollection($booking, $intent, $stripe);
+        }
+
         $this->provisionGuestAccount($booking);
 
         if ($booking->fresh()->balanceDueCents() <= 0) {
             GenerateBookingInvoice::dispatch($booking);
         }
+    }
+
+    /**
+     * Only genuine deposit-plan bookings (deposit_cents < totalCents())
+     * need `balance_due_at` set at all — a full-payment booking has
+     * nothing left to collect. The card/Customer only get saved if the
+     * guest actually opted in (`Public\BookingController::createPaymentIntent()`);
+     * checking `$intent['payment_method']` alone isn't enough to tell
+     * consent apart from a non-consenting deposit, since Stripe returns a
+     * `payment_method` on *any* succeeded intent regardless of
+     * `setup_future_usage` — the intent's own `setup_future_usage` field
+     * is the real signal. Without a saved card,
+     * bookings:charge-due-balances falls back to emailing a payment
+     * reminder instead of auto-charging.
+     */
+    private function scheduleBalanceCollection(Booking $booking, \Stripe\PaymentIntent $intent, StripePaymentService $stripe): void
+    {
+        $booking->refresh();
+
+        if ($booking->deposit_cents >= $booking->totalCents()) {
+            return;
+        }
+
+        $update = ['balance_due_at' => $booking->check_in->copy()->subDays(3)];
+
+        $paymentMethodId = $intent['payment_method'] ?? null;
+        $consented = ($intent['setup_future_usage'] ?? null) === 'off_session';
+
+        if ($paymentMethodId && $consented) {
+            $booking->loadMissing('guest');
+            $customer = $stripe->attachPaymentMethodToNewCustomer($booking->guest, $paymentMethodId);
+            $update['stripe_payment_method_id'] = $paymentMethodId;
+            $update['stripe_customer_id'] = $customer->id;
+        }
+
+        $booking->update($update);
     }
 
     /**

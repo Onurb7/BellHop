@@ -13,30 +13,26 @@
                     </tr>
                     <tr>
                         <td style="font-size:15px; line-height:1.6; padding-bottom:20px;">
-                            There's an outstanding balance on your reservation with us.
+                            We tried to charge the card on file for the remaining balance on your
+                            upcoming stay, but the charge didn't go through. No further attempts
+                            will be made automatically — please pay manually using the link below.
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color:#fbf6ec; border-radius:6px; padding:16px 20px; font-size:14px; line-height:1.8;">
                             <strong>Room:</strong> {{ $booking->room->roomType->name }} — {{ $booking->room->number }}<br>
                             <strong>Check-in:</strong> {{ $booking->check_in->format('l, F j, Y') }}<br>
-                            <strong>Check-out:</strong> {{ $booking->check_out->format('l, F j, Y') }}<br>
                             <strong>Balance due:</strong> ${{ number_format($balanceDueCents / 100, 2) }}
                         </td>
                     </tr>
-                    @if($willAutoCancel)
                     <tr>
-                        <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#a33b1e;">
-                            <strong>Please note:</strong> if this balance isn't settled within the
-                            next 24 hours, your reservation will be automatically cancelled and the
-                            room released.
+                        <td style="padding-top:24px;">
+                            <a href="{{ $payUrl }}" style="display:inline-block; background-color:#a17e3e; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-size:14px;">Pay now</a>
                         </td>
                     </tr>
-                    @endif
                     <tr>
                         <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#6b5330;">
-                            Please settle this balance with the front desk at your earliest
-                            convenience. Reach out if you have any questions.
+                            If you have any questions, please get in touch with the front desk.
                         </td>
                     </tr>
                 </table>

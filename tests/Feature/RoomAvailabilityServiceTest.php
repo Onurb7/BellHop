@@ -97,3 +97,27 @@ it('reports a fresh draft as live', function () {
 
     expect($this->service->isLiveDraft($booking))->toBeTrue();
 });
+
+it('deletes an expired guest-less hold but cancels an expired guest-attached one', function () {
+    $guestLess = Booking::factory()->create([
+        'guest_id' => null,
+        'status' => BookingStatus::PendingPayment,
+        'expires_at' => now()->subMinute(),
+    ]);
+    $guestAttached = Booking::factory()->create([
+        'status' => BookingStatus::PendingPayment,
+        'expires_at' => now()->subMinute(),
+    ]);
+    // Never expires (staff walk-in) — must be left untouched.
+    $noExpiry = Booking::factory()->create([
+        'status' => BookingStatus::PendingPayment,
+        'expires_at' => null,
+    ]);
+
+    $count = $this->service->cancelExpiredHolds();
+
+    expect($count)->toBe(2)
+        ->and(Booking::find($guestLess->id))->toBeNull()
+        ->and($guestAttached->fresh()->status)->toBe(BookingStatus::Cancelled)
+        ->and($noExpiry->fresh()->status)->toBe(BookingStatus::PendingPayment);
+});

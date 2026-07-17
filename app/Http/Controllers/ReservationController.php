@@ -7,6 +7,7 @@ use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Enums\RoomStatus;
 use App\Exceptions\RoomUnavailableException;
+use App\Mail\CheckoutThankYouMail;
 use App\Mail\PaymentReminderMail;
 use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
@@ -217,10 +218,13 @@ class ReservationController extends Controller
             ->filter()
             ->all();
 
+        $balancePaid = $booking->payments->contains('kind', BookingPaymentKind::Balance);
+
         return Inertia::render('Reservations/Show', [
             'booking' => [
                 'id' => $booking->id,
                 'status' => $booking->status->value,
+                'balance_paid' => $balancePaid,
                 'check_in' => $booking->check_in->toDateString(),
                 'check_out' => $booking->check_out->toDateString(),
                 'deposit_cents' => $booking->deposit_cents,
@@ -297,6 +301,23 @@ class ReservationController extends Controller
         $booking->cancel();
 
         return redirect()->route('reservations.index')->with('success', 'Reservation cancelled.');
+    }
+
+    public function checkIn(Booking $booking): RedirectResponse
+    {
+        $booking->checkIn();
+
+        return back()->with('success', 'Guest checked in.');
+    }
+
+    public function checkOut(Booking $booking): RedirectResponse
+    {
+        $booking->checkOut();
+
+        $booking->loadMissing('guest', 'room.roomType');
+        Mail::to($booking->guest->email)->send(new CheckoutThankYouMail($booking));
+
+        return back()->with('success', 'Guest checked out.');
     }
 
     public function sendReservationReminder(Booking $booking): RedirectResponse
@@ -397,6 +418,10 @@ class ReservationController extends Controller
 
     public function applyDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability): RedirectResponse
     {
+        if ($booking->payments()->where('kind', BookingPaymentKind::Balance)->exists()) {
+            return back()->withErrors(['check_in' => 'Date or room changes are no longer available once the balance has been charged.']);
+        }
+
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'check_in' => ['required', 'date'],
