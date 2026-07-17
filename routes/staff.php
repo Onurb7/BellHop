@@ -24,6 +24,8 @@ Route::middleware(['auth', 'role:staff|admin|super-admin'])
             Route::post('/{booking}/verify-payment', [ReservationController::class, 'verifyPayment'])->name('verify-payment');
             Route::post('/{booking}/payments/{payment}/refund', [StripePaymentController::class, 'refund'])->name('payments.refund');
             Route::post('/{booking}/cancel', [ReservationController::class, 'cancel'])->name('cancel');
+            Route::post('/{booking}/check-in', [ReservationController::class, 'checkIn'])->name('check-in');
+            Route::post('/{booking}/check-out', [ReservationController::class, 'checkOut'])->name('check-out');
             Route::post('/{booking}/remind/reservation', [ReservationController::class, 'sendReservationReminder'])->name('remind.reservation');
             Route::post('/{booking}/remind/payment', [ReservationController::class, 'sendPaymentReminder'])->name('remind.payment');
             Route::post('/{booking}/date-change/preview', [ReservationController::class, 'previewDateChange'])->name('date-change.preview');

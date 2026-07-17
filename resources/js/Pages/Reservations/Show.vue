@@ -52,6 +52,16 @@ function money(cents) {
 }
 
 const canCancel = computed(() => ['pending_payment', 'confirmed'].includes(props.booking.status));
+const canCheckIn = computed(() => props.booking.status === 'confirmed');
+const canCheckOut = computed(() => props.booking.status === 'checked_in');
+
+function checkIn() {
+    router.post(`/reservations/${props.booking.id}/check-in`, {}, { preserveScroll: true });
+}
+
+function checkOut() {
+    router.post(`/reservations/${props.booking.id}/check-out`, {}, { preserveScroll: true });
+}
 
 const verifyPaymentLabel = computed(() => {
     if (props.booking.status === 'pending_payment') {
@@ -368,6 +378,22 @@ function applyOption(option) {
                             class="rounded-md border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
                         >
                             Send Payment Reminder
+                        </button>
+                        <button
+                            v-if="canCheckIn"
+                            type="button"
+                            @click="checkIn"
+                            class="rounded-md border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
+                        >
+                            Check In
+                        </button>
+                        <button
+                            v-if="canCheckOut"
+                            type="button"
+                            @click="checkOut"
+                            class="rounded-md border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
+                        >
+                            Check Out
                         </button>
                         <button
                             v-if="canCancel"

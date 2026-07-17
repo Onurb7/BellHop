@@ -7,6 +7,7 @@ use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Enums\RoomStatus;
 use App\Exceptions\RoomUnavailableException;
+use App\Mail\CheckoutThankYouMail;
 use App\Mail\PaymentReminderMail;
 use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
@@ -297,6 +298,23 @@ class ReservationController extends Controller
         $booking->cancel();
 
         return redirect()->route('reservations.index')->with('success', 'Reservation cancelled.');
+    }
+
+    public function checkIn(Booking $booking): RedirectResponse
+    {
+        $booking->checkIn();
+
+        return back()->with('success', 'Guest checked in.');
+    }
+
+    public function checkOut(Booking $booking): RedirectResponse
+    {
+        $booking->checkOut();
+
+        $booking->loadMissing('guest', 'room.roomType');
+        Mail::to($booking->guest->email)->send(new CheckoutThankYouMail($booking));
+
+        return back()->with('success', 'Guest checked out.');
     }
 
     public function sendReservationReminder(Booking $booking): RedirectResponse

@@ -140,4 +140,35 @@ class Booking extends Model implements HasMedia
 
         $this->update(['status' => BookingStatus::Cancelled]);
     }
+
+    public function checkIn(): void
+    {
+        if ($this->status !== BookingStatus::Confirmed) {
+            throw new RuntimeException('Only a confirmed booking can be checked in.');
+        }
+
+        $this->update(['status' => BookingStatus::CheckedIn]);
+    }
+
+    public function checkOut(): void
+    {
+        if ($this->status !== BookingStatus::CheckedIn) {
+            throw new RuntimeException('Only a checked-in booking can be checked out.');
+        }
+
+        $this->update(['status' => BookingStatus::CheckedOut]);
+    }
+
+    /**
+     * Sweep-only — reachable exclusively from the nightly no-show command,
+     * never a manual staff action (matches the domain plan exactly).
+     */
+    public function markNoShow(): void
+    {
+        if ($this->status !== BookingStatus::Confirmed) {
+            throw new RuntimeException('Only a confirmed booking can be marked a no-show.');
+        }
+
+        $this->update(['status' => BookingStatus::NoShow]);
+    }
 }
