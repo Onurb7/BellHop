@@ -31,3 +31,9 @@ Schedule::command('bookings:cancel-unpaid-balances')->dailyAt('04:00');
 // once a day until it's settled, same PaymentReminderMail staff can also
 // send manually from the reservation page.
 Schedule::command('bookings:remind-checked-out-balances')->dailyAt('08:00');
+
+// Monthly refresh of demo guests/bookings so a recruiter demoing the app
+// always sees a plausible, "today"-anchored spread of activity — rooms,
+// room types, amenities and services (and their images) are permanently
+// static and untouched by this. Disable via DEMO_RESEED_ACTIVITY_ENABLED=false.
+Schedule::command('demo:reseed-activity')->monthlyOn(1, '01:00');

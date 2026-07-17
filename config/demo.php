@@ -18,6 +18,11 @@ return [
 
     'login_enabled' => (bool) env('DEMO_LOGIN_ENABLED', true),
 
+    // Guards app/Console/Commands/ReseedDemoActivity.php — the monthly
+    // wipe-and-regenerate of guests/bookings. Off switch for a genuinely
+    // destructive scheduled operation, matching the login_enabled precedent.
+    'reseed_activity_enabled' => (bool) env('DEMO_RESEED_ACTIVITY_ENABLED', true),
+
     // Seeded, but deliberately outside `accounts` below — never reachable
     // via the login-as route.
     'super_admin' => [

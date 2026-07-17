@@ -2,33 +2,41 @@
 
 namespace Database\Seeders;
 
-use App\Enums\BookingChargeCategory;
-use App\Enums\BookingPaymentKind;
-use App\Enums\BookingStatus;
 use App\Enums\ServicePricingType;
 use App\Models\Amenity;
-use App\Models\Booking;
-use App\Models\Guest;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Service;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Services\DemoActivitySeeder;
 use Illuminate\Database\Seeder;
 
 class DemoHotelSeeder extends Seeder
 {
     /**
+     * Room-type slug => image shot list, matched against
+     * database/seeders/assets/rooms/{slug}/{shot}.webp — see that
+     * directory's README.md for the full manifest. Missing files are
+     * skipped silently (attachMasterImage()), so this works today with
+     * zero images present.
+     */
+    private const ROOM_IMAGE_SHOTS = [
+        'classic-room' => ['bedroom', 'bathroom'],
+        'deluxe-room' => ['bedroom', 'bathroom', 'seating-area'],
+        'executive-suite' => ['bedroom', 'bathroom', 'living-room', 'balcony-view'],
+    ];
+
+    /**
      * Seeds a small demo hotel — room types, rooms (across a few floors,
-     * with amenities), services, and a spread of bookings around today
-     * (past/current/future, with gaps left vacant) so the tape chart has
-     * something realistic to render. Skips entirely if rooms already
-     * exist, so it's safe to re-run `db:seed`.
+     * with amenities and stock photos), services, and delegates guest/
+     * booking generation to DemoActivitySeeder. Skips entirely if rooms
+     * already exist, so it's safe to re-run `db:seed`.
      */
     public function run(): void
     {
+        $activity = app(DemoActivitySeeder::class);
+
         if (Room::exists()) {
-            $this->linkDemoGuestBookings();
+            $activity->linkDemoGuestBookings();
 
             return;
         }
@@ -42,13 +50,20 @@ class DemoHotelSeeder extends Seeder
             ['name' => 'Executive Suite', 'slug' => 'executive-suite', 'base_rate_cents' => 32000, 'max_occupancy' => 4],
         ])->map(fn (array $attributes) => RoomType::create($attributes));
 
-        Service::insert([
-            ['name' => 'Parking', 'slug' => 'parking', 'unit_price_cents' => 1500, 'pricing_type' => ServicePricingType::PerNight->value, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Breakfast', 'slug' => 'breakfast', 'unit_price_cents' => 2000, 'pricing_type' => ServicePricingType::PerNight->value, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Late Checkout', 'slug' => 'late-checkout', 'unit_price_cents' => 3000, 'pricing_type' => ServicePricingType::Flat->value, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
-
-        $rooms = collect();
+        collect([
+            ['name' => 'Parking', 'slug' => 'parking', 'unit_price_cents' => 1500, 'pricing_type' => ServicePricingType::PerNight],
+            ['name' => 'Breakfast', 'slug' => 'breakfast', 'unit_price_cents' => 2000, 'pricing_type' => ServicePricingType::PerNight],
+            ['name' => 'Late Checkout', 'slug' => 'late-checkout', 'unit_price_cents' => 3000, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Airport Shuttle', 'slug' => 'airport-shuttle', 'unit_price_cents' => 4500, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Spa Treatment', 'slug' => 'spa-treatment', 'unit_price_cents' => 8000, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Minibar Restock', 'slug' => 'minibar-restock', 'unit_price_cents' => 2500, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'In-Room Dining', 'slug' => 'in-room-dining', 'unit_price_cents' => 3500, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Pet Fee', 'slug' => 'pet-fee', 'unit_price_cents' => 2000, 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Bike Rental', 'slug' => 'bike-rental', 'unit_price_cents' => 1800, 'pricing_type' => ServicePricingType::PerNight],
+        ])->each(function (array $attributes) {
+            $service = Service::create(['active' => true, ...$attributes]);
+            $this->attachMasterImage($service, database_path("seeders/assets/services/{$service->slug}.webp"));
+        });
 
         foreach (range(1, 3) as $floor) {
             foreach (range(1, 4) as $i) {
@@ -65,166 +80,26 @@ class DemoHotelSeeder extends Seeder
                 ]);
 
                 $room->amenities()->attach($amenities->random(rand(2, 4))->pluck('id'));
-                $rooms->push($room);
+                $this->attachRoomImages($room, $roomType->slug);
             }
         }
 
-        foreach ($rooms as $room) {
-            $this->seedBookingsForRoom($room);
-        }
-
-        $this->linkDemoGuestBookings();
+        $activity->reseedGuestsAndBookings();
     }
 
-    /**
-     * Links the seeded `guest` demo account to a `guests` row and gives
-     * it a past/active/pending-payment stay each, so the guest dashboard
-     * has real data out of the box. Runs on every seed (not just the
-     * first) since it's guarded independently — `Room::exists()` short-
-     * circuits the room/type/booking generation above, but this needs to
-     * backfill onto an already-seeded database too.
-     */
-    private function linkDemoGuestBookings(): void
+    private function attachRoomImages(Room $room, string $roomTypeSlug): void
     {
-        $account = config('demo.accounts.guest');
-        $user = $account['email'] ? User::where('email', $account['email'])->first() : null;
-
-        if (! $user) {
-            return;
-        }
-
-        $guest = Guest::firstOrCreate(
-            ['user_id' => $user->id],
-            ['first_name' => 'Guest', 'last_name' => 'Demo', 'email' => $user->email],
-        );
-
-        if ($guest->bookings()->exists()) {
-            return;
-        }
-
-        $rooms = Room::with('roomType')->inRandomOrder()->limit(3)->get();
-
-        if ($rooms->count() < 3) {
-            return;
-        }
-
-        // Dates chosen well outside seedBookingsForRoom's today±(10..21)
-        // window so these never collide with the exclusion constraint on
-        // whatever bookings that method already generated for these rooms.
-        $this->createGuestBooking($guest, $rooms[0], Carbon::today()->subDays(45), Carbon::today()->subDays(41), BookingStatus::CheckedOut);
-        $this->createGuestBooking($guest, $rooms[1], Carbon::today()->addDays(35), Carbon::today()->addDays(38), BookingStatus::Confirmed);
-        $this->createGuestBooking($guest, $rooms[2], Carbon::today()->addDays(45), Carbon::today()->addDays(47), BookingStatus::PendingPayment);
-    }
-
-    private function createGuestBooking(Guest $guest, Room $room, Carbon $checkIn, Carbon $checkOut, BookingStatus $status): void
-    {
-        $nights = $checkIn->diffInDays($checkOut);
-        $roomChargeCents = $nights * $room->roomType->base_rate_cents;
-        $depositCents = (int) round($roomChargeCents * 0.3);
-
-        $booking = Booking::create([
-            'room_id' => $room->id,
-            'guest_id' => $guest->id,
-            'check_in' => $checkIn,
-            'check_out' => $checkOut,
-            'status' => $status,
-            'deposit_cents' => $depositCents,
-        ]);
-
-        $booking->charges()->create([
-            'category' => BookingChargeCategory::Room,
-            'description' => "Room charge: {$nights} night(s) at {$room->number}",
-            'amount_cents' => $roomChargeCents,
-        ]);
-
-        if ($status === BookingStatus::PendingPayment) {
-            return;
-        }
-
-        $booking->payments()->create([
-            'kind' => BookingPaymentKind::Deposit,
-            'amount_cents' => $depositCents,
-            'verified_at' => $checkIn->copy()->subDays(fake()->numberBetween(1, 14)),
-        ]);
-
-        if ($status === BookingStatus::CheckedOut) {
-            $booking->payments()->create([
-                'kind' => BookingPaymentKind::Balance,
-                'amount_cents' => $roomChargeCents - $depositCents,
-                'verified_at' => $checkOut->copy(),
-            ]);
+        foreach (self::ROOM_IMAGE_SHOTS[$roomTypeSlug] ?? [] as $shot) {
+            $this->attachMasterImage($room, database_path("seeders/assets/rooms/{$roomTypeSlug}/{$shot}.webp"));
         }
     }
 
-    private function seedBookingsForRoom(Room $room): void
+    private function attachMasterImage(Room|Service $model, string $path): void
     {
-        // Leave a fifth of rooms entirely vacant, to demonstrate the
-        // "nothing booked, no need to clean" case on the tape chart.
-        if (fake()->boolean(20)) {
+        if (! file_exists($path)) {
             return;
         }
 
-        $cursor = Carbon::today()->subDays(fake()->numberBetween(3, 10));
-        $horizon = Carbon::today()->addDays(21);
-
-        while ($cursor->lt($horizon)) {
-            if (fake()->boolean(35)) {
-                $cursor = $cursor->addDays(fake()->numberBetween(1, 4));
-
-                continue;
-            }
-
-            $checkIn = $cursor->copy();
-            $checkOut = $checkIn->copy()->addDays(fake()->numberBetween(1, 5));
-            $nights = $checkIn->diffInDays($checkOut);
-            $roomChargeCents = $nights * $room->roomType->base_rate_cents;
-            $depositCents = (int) round($roomChargeCents * 0.3);
-
-            $status = match (true) {
-                $checkOut->lte(Carbon::today()) => BookingStatus::CheckedOut,
-                $checkIn->gt(Carbon::today()) => BookingStatus::Confirmed,
-                default => BookingStatus::CheckedIn,
-            };
-
-            // Occasionally leave a still-upcoming booking awaiting its
-            // deposit, so the Reservations page's "Verify Payment" action
-            // has something real to demonstrate out of the box.
-            if ($status === BookingStatus::Confirmed && fake()->boolean(17)) {
-                $status = BookingStatus::PendingPayment;
-            }
-
-            $booking = Booking::create([
-                'room_id' => $room->id,
-                'guest_id' => Guest::factory()->create()->id,
-                'check_in' => $checkIn,
-                'check_out' => $checkOut,
-                'status' => $status,
-                'deposit_cents' => $depositCents,
-            ]);
-
-            $booking->charges()->create([
-                'category' => BookingChargeCategory::Room,
-                'description' => "Room charge: {$nights} night(s) at {$room->number}",
-                'amount_cents' => $roomChargeCents,
-            ]);
-
-            if ($status !== BookingStatus::PendingPayment) {
-                $booking->payments()->create([
-                    'kind' => BookingPaymentKind::Deposit,
-                    'amount_cents' => $depositCents,
-                    'verified_at' => $checkIn->copy()->subDays(fake()->numberBetween(1, 14)),
-                ]);
-
-                if ($status === BookingStatus::CheckedOut) {
-                    $booking->payments()->create([
-                        'kind' => BookingPaymentKind::Balance,
-                        'amount_cents' => $roomChargeCents - $depositCents,
-                        'verified_at' => $checkOut->copy(),
-                    ]);
-                }
-            }
-
-            $cursor = $checkOut->copy();
-        }
+        $model->addMedia($path)->preservingOriginal()->toMediaCollection('images');
     }
 }
