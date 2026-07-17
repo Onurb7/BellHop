@@ -20,6 +20,7 @@ class ServiceController extends Controller
                 'unit_price' => $service->unit_price_cents / 100,
                 'pricing_type' => $service->pricing_type->value,
                 'active' => $service->active,
+                'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
             ]),
         ]);
     }
@@ -33,7 +34,9 @@ class ServiceController extends Controller
 
     public function store(ServiceRequest $request): RedirectResponse
     {
-        Service::create($request->validatedForModel());
+        $service = Service::create($request->validatedForModel());
+
+        $this->attachImages($service, $request);
 
         return redirect()->route('admin.services.index')->with('success', 'Service created.');
     }
@@ -48,6 +51,11 @@ class ServiceController extends Controller
                 'unit_price' => $service->unit_price_cents / 100,
                 'pricing_type' => $service->pricing_type->value,
                 'active' => $service->active,
+                'images' => $service->getMedia('images')->map(fn ($media) => [
+                    'id' => $media->id,
+                    'url' => $media->getUrl(),
+                    'thumb_url' => $media->getUrl('thumb'),
+                ]),
             ],
         ]);
     }
@@ -55,6 +63,12 @@ class ServiceController extends Controller
     public function update(ServiceRequest $request, Service $service): RedirectResponse
     {
         $service->update($request->validatedForModel());
+
+        $this->attachImages($service, $request);
+
+        foreach ($request->validated('remove_images', []) as $mediaId) {
+            $service->media()->where('id', $mediaId)->first()?->delete();
+        }
 
         return redirect()->route('admin.services.index')->with('success', 'Service updated.');
     }
@@ -64,5 +78,12 @@ class ServiceController extends Controller
         $service->delete();
 
         return redirect()->route('admin.services.index')->with('success', 'Service deleted.');
+    }
+
+    private function attachImages(Service $service, ServiceRequest $request): void
+    {
+        foreach ($request->file('images', []) as $file) {
+            $service->addMedia($file)->toMediaCollection('images');
+        }
     }
 }

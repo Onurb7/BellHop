@@ -33,6 +33,7 @@ function destroy(service) {
             <table class="w-full text-left text-sm">
                 <thead class="border-b border-gold-500/20 bg-gold-50 text-xs uppercase tracking-wide text-gold-700">
                     <tr>
+                        <th class="px-4 py-3"></th>
                         <th class="px-4 py-3">Name</th>
                         <th class="px-4 py-3">Price</th>
                         <th class="px-4 py-3">Pricing</th>
@@ -42,6 +43,15 @@ function destroy(service) {
                 </thead>
                 <tbody>
                     <tr v-for="service in services" :key="service.id" class="border-b border-black/5 last:border-0">
+                        <td class="px-4 py-3">
+                            <img
+                                v-if="service.thumb_url"
+                                :src="service.thumb_url"
+                                class="h-12 w-16 rounded object-cover"
+                                alt=""
+                            />
+                            <div v-else class="h-12 w-16 rounded bg-black/5"></div>
+                        </td>
                         <td class="px-4 py-3 font-medium">{{ service.name }}</td>
                         <td class="px-4 py-3">${{ service.unit_price.toFixed(2) }}</td>
                         <td class="px-4 py-3">{{ service.pricing_type === 'per_night' ? 'Per night' : 'Flat fee' }}</td>
@@ -59,7 +69,7 @@ function destroy(service) {
                         </td>
                     </tr>
                     <tr v-if="services.length === 0">
-                        <td colspan="5" class="px-4 py-8 text-center opacity-50">No services yet.</td>
+                        <td colspan="6" class="px-4 py-8 text-center opacity-50">No services yet.</td>
                     </tr>
                 </tbody>
             </table>
