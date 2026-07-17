@@ -54,7 +54,8 @@ instead of repeating that pattern.
   types, individual rooms (with image uploads via Spatie Media Library,
   toggleable feature badges, a publish/unpublish flag so unfinished rooms
   stay hidden from guests, and a "duplicate" action for cloning a room's
-  feature set), and services priced either per-night or as a flat fee.
+  feature set), and services (parking, breakfast, spa, airport shuttle...)
+  priced either per-night or as a flat fee, each with its own photo.
 - **Staff/admin capacity calendar** — a tape-chart view (rooms × dates,
   split into AM/PM halves) for front-desk and housekeeping to see
   check-ins, check-outs, and occupancy at a glance, filterable by floor
@@ -125,7 +126,7 @@ instead of repeating that pattern.
   "forgot password" recovery path share the same underlying broker.
 - **A complete booking lifecycle, driven by real scheduled jobs** — the
   state machine now goes all the way to `checkIn()`/`checkOut()` (staff
-  actions) and `markNoShow()` (a nightly sweep), and five real Artisan
+  actions) and `markNoShow()` (a nightly sweep), and six real Artisan
   commands run on the `scheduler` service instead of sitting idle:
   abandoned public checkouts get cancelled automatically instead of
   blocking a room forever, past-due confirmed stays with no check-in
@@ -148,6 +149,14 @@ instead of repeating that pattern.
   — a declined auto-charge or an ignored reminder — the booking is
   automatically cancelled and the room released for resale, rather than
   sitting blocked all the way through the stay.
+- **Demo data engineered to stay fresh** — the room/service catalog
+  (including real stock photography, seeded via Spatie Media Library) is a
+  static, hand-curated set that never changes; guests and bookings alone
+  are wiped and regenerated every month by a scheduled job, spanning a
+  rolling two-months-back/one-month-forward window, so a recruiter opening
+  the deployed app always finds a populated, plausible demo instead of
+  stale or empty data. Any room or service added later through the admin
+  UI is automatically included in every future reseed.
 - **Queued background work** via Horizon — PDF invoice generation and
   reminder emails run as queued jobs, not inline in the request, so a
   slow mail send or PDF render never blocks the response.
@@ -190,10 +199,12 @@ designed but not yet built:
 - Authenticated app shell (sidebar + topbar) shared across all roles, with
   navigation gated per role
 - Admin CRUD for room types, rooms, services, and amenities — image
-  uploads, feature badges, publish/unpublish, room duplication
+  uploads (rooms and services both), feature badges, publish/unpublish,
+  room duplication
 - Booking domain model — `guests`/`bookings` schema with the exclusion
-  constraint described above, seeded with realistic demo data (~76 bookings
-  across past/current/future stays, some rooms deliberately left vacant)
+  constraint described above, seeded with realistic demo data spanning a
+  rolling two-months-back/one-month-forward window, some rooms
+  deliberately left vacant
 - Staff/admin capacity calendar (tape chart) described above
 - Reservations management and the charge/payment ledger described above
   (verify payment, reminders, typed-confirmation cancellation, date/room
@@ -213,8 +224,8 @@ designed but not yet built:
   frontend test)
 - The complete booking state machine and scheduled automation described
   above — `checkIn()`/`checkOut()`/`markNoShow()`, expired-hold cleanup,
-  no-show sweeps, and off-session balance auto-charging, all running on
-  the `scheduler` service
+  no-show sweeps, off-session balance auto-charging, and the monthly
+  demo-data reseed, all running on the `scheduler` service
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)
