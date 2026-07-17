@@ -124,4 +124,30 @@ class RoomAvailabilityService
 
         return true;
     }
+
+    /**
+     * Scheduled backstop for pending_payment bookings whose hold has
+     * expired — separate from sweepExpiredDrafts() above, which only
+     * covers guest-less drafts and only runs lazily on-read. A
+     * guest-attached pending_payment booking only ever gets an expires_at
+     * from the public self-service flow (Public\BookingController::storeGuest())
+     * — the staff walk-in flow deliberately leaves it null, since a human
+     * staff member is actively managing that booking and shouldn't have it
+     * auto-cancelled out from under a guest standing at the counter.
+     */
+    public function cancelExpiredHolds(): int
+    {
+        $count = 0;
+
+        Booking::where('status', BookingStatus::PendingPayment)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->get()
+            ->each(function (Booking $booking) use (&$count) {
+                $booking->guest_id === null ? $booking->delete() : $booking->cancel();
+                $count++;
+            });
+
+        return $count;
+    }
 }
