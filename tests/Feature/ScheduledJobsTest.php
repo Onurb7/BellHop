@@ -75,7 +75,8 @@ it('emails the guest and stops retrying when the off-session charge is declined'
     $this->artisan('bookings:charge-due-balances')->assertSuccessful();
 
     $booking = $booking->fresh();
-    expect($booking->balance_due_at)->toBeNull();
+    expect($booking->balance_due_at)->toBeNull()
+        ->and($booking->balance_collection_failed_at)->not->toBeNull();
     Mail::assertSent(\App\Mail\PaymentAutoChargeFailedMail::class);
 });
 
@@ -100,6 +101,47 @@ it('sends a payment reminder instead of charging when no card was saved', functi
     $this->artisan('bookings:charge-due-balances')->assertSuccessful();
 
     $booking = $booking->fresh();
-    expect($booking->balance_due_at)->toBeNull();
+    expect($booking->balance_due_at)->toBeNull()
+        ->and($booking->balance_collection_failed_at)->not->toBeNull();
     Mail::assertSent(\App\Mail\PaymentReminderMail::class);
+});
+
+it('cancels a confirmed booking whose balance collection failed more than 24 hours ago', function () {
+    Mail::fake();
+
+    $guest = Guest::factory()->create();
+    $overdue = Booking::factory()->create([
+        'guest_id' => $guest->id,
+        'status' => BookingStatus::Confirmed,
+        'deposit_cents' => 30000,
+        'balance_collection_failed_at' => now()->subHours(25),
+    ]);
+    $overdue->charges()->create(['category' => 'room', 'description' => 'Room charge', 'amount_cents' => 100000]);
+    $overdue->payments()->create(['kind' => 'deposit', 'amount_cents' => 30000, 'verified_at' => now()]);
+
+    $withinGrace = Booking::factory()->create([
+        'guest_id' => $guest->id,
+        'status' => BookingStatus::Confirmed,
+        'deposit_cents' => 30000,
+        'balance_collection_failed_at' => now()->subHours(2),
+    ]);
+    $withinGrace->charges()->create(['category' => 'room', 'description' => 'Room charge', 'amount_cents' => 100000]);
+    $withinGrace->payments()->create(['kind' => 'deposit', 'amount_cents' => 30000, 'verified_at' => now()]);
+
+    $paidInTheMeantime = Booking::factory()->create([
+        'guest_id' => $guest->id,
+        'status' => BookingStatus::Confirmed,
+        'deposit_cents' => 30000,
+        'balance_collection_failed_at' => now()->subHours(25),
+    ]);
+    $paidInTheMeantime->charges()->create(['category' => 'room', 'description' => 'Room charge', 'amount_cents' => 100000]);
+    $paidInTheMeantime->payments()->create(['kind' => 'deposit', 'amount_cents' => 30000, 'verified_at' => now()]);
+    $paidInTheMeantime->payments()->create(['kind' => 'balance', 'amount_cents' => 70000, 'verified_at' => now()]);
+
+    $this->artisan('bookings:cancel-unpaid-balances')->assertSuccessful();
+
+    expect($overdue->fresh()->status)->toBe(BookingStatus::Cancelled)
+        ->and($withinGrace->fresh()->status)->toBe(BookingStatus::Confirmed)
+        ->and($paidInTheMeantime->fresh()->status)->toBe(BookingStatus::Confirmed);
+    Mail::assertSent(\App\Mail\BookingCancelledNonPaymentMail::class, 1);
 });

@@ -36,7 +36,7 @@ class ChargeDueBalances extends Command
             // No saved card (the guest didn't opt in at deposit time) —
             // nothing to charge, so this is the reminder path instead.
             if (! $booking->stripe_payment_method_id) {
-                $booking->update(['balance_due_at' => null]);
+                $booking->update(['balance_due_at' => null, 'balance_collection_failed_at' => now()]);
                 Mail::to($booking->guest->email)->send(new PaymentReminderMail($booking, $amountCents));
                 $reminded++;
 
@@ -50,9 +50,9 @@ class ChargeDueBalances extends Command
                 $stripe->chargeOffSession($booking, $amountCents);
                 $charged++;
             } catch (CardException) {
-                // No retry — it's now a manual-pay-or-staff-follow-up
-                // situation, same as any other unpaid balance.
-                $booking->update(['balance_due_at' => null]);
+                // No retry — bookings:cancel-unpaid-balances is the
+                // backstop if this stays unpaid past its grace window.
+                $booking->update(['balance_due_at' => null, 'balance_collection_failed_at' => now()]);
                 Mail::to($booking->guest->email)->send(new PaymentAutoChargeFailedMail(
                     $booking,
                     $amountCents,

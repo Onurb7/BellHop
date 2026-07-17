@@ -21,3 +21,7 @@ Schedule::command('bookings:sweep-no-shows')->dailyAt('02:00');
 // (check-in minus 3 days) has arrived; without a saved card, sends a
 // payment reminder instead.
 Schedule::command('bookings:charge-due-balances')->dailyAt('03:00');
+
+// 24h grace window after a charge decline or a no-saved-card reminder —
+// run after the job above, not concurrently with it.
+Schedule::command('bookings:cancel-unpaid-balances')->dailyAt('04:00');

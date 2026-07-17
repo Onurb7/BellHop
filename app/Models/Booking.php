@@ -31,6 +31,7 @@ class Booking extends Model implements HasMedia
         'stripe_payment_method_id',
         'stripe_customer_id',
         'balance_due_at',
+        'balance_collection_failed_at',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class Booking extends Model implements HasMedia
             'expires_at' => 'datetime',
             'invoice_generated_at' => 'datetime',
             'balance_due_at' => 'datetime',
+            'balance_collection_failed_at' => 'datetime',
         ];
     }
 
