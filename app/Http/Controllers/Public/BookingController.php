@@ -82,12 +82,16 @@ class BookingController extends Controller
             ['booking' => $booking],
         );
 
+        $isDepositPlan = $booking->deposit_cents < $booking->totalCents();
+
         return Inertia::render('Public/Booking/Pay', [
             'booking' => [
                 'id' => $booking->id,
                 'total_cents' => $booking->totalCents(),
                 'deposit_cents' => $booking->deposit_cents,
                 'balance_due_cents' => $booking->balanceDueCents(),
+                'is_deposit_plan' => $isDepositPlan,
+                'balance_auto_charge_date' => $isDepositPlan ? $booking->check_in->copy()->subDays(3)->toFormattedDateString() : null,
                 'room' => [
                     'number' => $booking->room->number,
                     'room_type' => $booking->room->roomType->name,
@@ -119,11 +123,22 @@ class BookingController extends Controller
         $nights = $booking->check_in->diffInDays($booking->check_out);
         $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
 
-        DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights) {
+        // A 30% deposit only makes sense if there's still time for the
+        // balance to be auto-charged 3 days before check-in — otherwise
+        // full payment is required up front, same as the plan's original
+        // (previously unenforced) rule.
+        $canOfferDeposit = now()->addDays(3)->lt($booking->check_in);
+        $depositCents = $canOfferDeposit ? (int) round($roomChargeCents * 0.3) : $roomChargeCents;
+
+        DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights, $depositCents) {
             $booking->update([
                 'guest_id' => $guest->id,
-                'expires_at' => null,
-                'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                // A fresh hold window, not null — an abandoned checkout
+                // past this point is picked up by the scheduled
+                // bookings:cancel-expired-holds command instead of
+                // blocking the room forever.
+                'expires_at' => now()->addMinutes(15),
+                'deposit_cents' => $depositCents,
             ]);
 
             $booking->charges()->create([
@@ -180,7 +195,7 @@ class BookingController extends Controller
         return redirect()->route('rooms.index');
     }
 
-    public function createPaymentIntent(Booking $booking, StripePaymentService $stripe): JsonResponse
+    public function createPaymentIntent(Request $request, Booking $booking, StripePaymentService $stripe): JsonResponse
     {
         abort_if($booking->guest_id === null, 422, 'This reservation has no guest details yet.');
         abort_if($booking->status !== BookingStatus::PendingPayment, 422, 'This reservation is no longer awaiting payment.');
@@ -193,7 +208,11 @@ class BookingController extends Controller
             return response()->json(['message' => 'Nothing is currently due on this reservation.'], 422);
         }
 
-        $intent = $stripe->createPaymentIntent($booking, $kind, $amountCents);
+        // Explicit guest opt-in, never assumed — see Public/Booking/Pay.vue's
+        // unchecked-by-default checkbox. Irrelevant for a full-payment
+        // booking (createPaymentIntent() only ever saves a card for a
+        // genuine deposit-plan booking regardless of this flag).
+        $intent = $stripe->createPaymentIntent($booking, $kind, $amountCents, $request->boolean('save_card'));
 
         return response()->json([
             'client_secret' => $intent->client_secret,

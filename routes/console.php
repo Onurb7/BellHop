@@ -16,3 +16,8 @@ Schedule::command('bookings:cancel-expired-holds')->everyFiveMinutes();
 // (assumption, tune later) — confirmed bookings whose check-in date has
 // passed with no check-in get marked a no-show.
 Schedule::command('bookings:sweep-no-shows')->dailyAt('02:00');
+
+// Off-session charge for deposit-plan bookings whose balance_due_at
+// (check-in minus 3 days) has arrived; without a saved card, sends a
+// payment reminder instead.
+Schedule::command('bookings:charge-due-balances')->dailyAt('03:00');

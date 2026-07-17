@@ -218,10 +218,13 @@ class ReservationController extends Controller
             ->filter()
             ->all();
 
+        $balancePaid = $booking->payments->contains('kind', BookingPaymentKind::Balance);
+
         return Inertia::render('Reservations/Show', [
             'booking' => [
                 'id' => $booking->id,
                 'status' => $booking->status->value,
+                'balance_paid' => $balancePaid,
                 'check_in' => $booking->check_in->toDateString(),
                 'check_out' => $booking->check_out->toDateString(),
                 'deposit_cents' => $booking->deposit_cents,
@@ -415,6 +418,10 @@ class ReservationController extends Controller
 
     public function applyDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability): RedirectResponse
     {
+        if ($booking->payments()->where('kind', BookingPaymentKind::Balance)->exists()) {
+            return back()->withErrors(['check_in' => 'Date or room changes are no longer available once the balance has been charged.']);
+        }
+
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'check_in' => ['required', 'date'],

@@ -28,6 +28,9 @@ class Booking extends Model implements HasMedia
         'expires_at',
         'invoice_number',
         'invoice_generated_at',
+        'stripe_payment_method_id',
+        'stripe_customer_id',
+        'balance_due_at',
     ];
 
     protected function casts(): array
@@ -39,6 +42,7 @@ class Booking extends Model implements HasMedia
             'last_reminder_sent_at' => 'datetime',
             'expires_at' => 'datetime',
             'invoice_generated_at' => 'datetime',
+            'balance_due_at' => 'datetime',
         ];
     }
 

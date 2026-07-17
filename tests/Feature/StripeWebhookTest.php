@@ -8,6 +8,8 @@ use App\Models\BookingPayment;
 use App\Models\Guest;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use App\Services\StripePaymentService;
+use Stripe\Customer;
 
 /**
  * Signs a fake Stripe event payload the same way Stripe itself does
@@ -28,7 +30,7 @@ function postStripeWebhook(array $payload, ?string $secret = null): \Illuminate\
     ]);
 }
 
-function paymentSucceededPayload(string $eventId, Booking $booking, string $kind, int $amountCents, string $paymentIntentId): array
+function paymentSucceededPayload(string $eventId, Booking $booking, string $kind, int $amountCents, string $paymentIntentId, ?string $paymentMethodId = null, bool $consented = false): array
 {
     return [
         'id' => $eventId,
@@ -41,6 +43,8 @@ function paymentSucceededPayload(string $eventId, Booking $booking, string $kind
             'amount_received' => $amountCents,
             'currency' => 'usd',
             'status' => 'succeeded',
+            ...($paymentMethodId ? ['payment_method' => $paymentMethodId] : []),
+            ...($consented ? ['setup_future_usage' => 'off_session'] : []),
             'metadata' => ['booking_id' => (string) $booking->id, 'kind' => $kind],
         ]],
     ];
@@ -87,6 +91,55 @@ it('rejects a payload with an invalid signature and creates no records', functio
     $response->assertStatus(400);
     expect(BookingPayment::where('stripe_payment_intent_id', 'pi_3')->exists())->toBeFalse();
     expect(StripeWebhookEvent::where('stripe_event_id', 'evt_bad_sig')->exists())->toBeFalse();
+});
+
+it('saves the card and schedules the balance auto-charge when the guest consented', function () {
+    $this->mock(StripePaymentService::class, function ($mock) {
+        $mock->shouldReceive('attachPaymentMethodToNewCustomer')
+            ->once()
+            ->with(\Mockery::on(fn ($guest) => $guest->is($this->guest)), 'pm_test_1')
+            ->andReturn(Customer::constructFrom(['id' => 'cus_test_1']));
+    });
+
+    // deposit_cents (30000, from beforeEach) is less than the 100000
+    // room charge — a genuine deposit-plan booking.
+    postStripeWebhook(paymentSucceededPayload('evt_card_save', $this->booking, 'deposit', 30000, 'pi_card_save', 'pm_test_1', consented: true))
+        ->assertOk();
+
+    $booking = $this->booking->fresh();
+    expect($booking->stripe_payment_method_id)->toBe('pm_test_1')
+        ->and($booking->stripe_customer_id)->toBe('cus_test_1')
+        ->and($booking->balance_due_at)->not->toBeNull();
+});
+
+it('schedules the balance but never saves a card when the guest did not consent', function () {
+    // Stripe still returns a payment_method on any succeeded intent
+    // regardless of setup_future_usage — presence alone must not be
+    // mistaken for consent.
+    $this->mock(StripePaymentService::class, function ($mock) {
+        $mock->shouldNotReceive('attachPaymentMethodToNewCustomer');
+    });
+
+    postStripeWebhook(paymentSucceededPayload('evt_no_consent', $this->booking, 'deposit', 30000, 'pi_no_consent', 'pm_test_3', consented: false))
+        ->assertOk();
+
+    $booking = $this->booking->fresh();
+    expect($booking->stripe_payment_method_id)->toBeNull()
+        ->and($booking->stripe_customer_id)->toBeNull()
+        ->and($booking->balance_due_at)->not->toBeNull();
+});
+
+it('never saves a card for a full-payment booking, even if Stripe returns a payment_method', function () {
+    $this->booking->update(['deposit_cents' => 100000]);
+
+    // No mock expectation set — attachPaymentMethodToNewCustomer must
+    // never be called, since deposit_cents already covers the full total.
+    postStripeWebhook(paymentSucceededPayload('evt_full_pay_pm', $this->booking, 'deposit', 100000, 'pi_full_pay_pm', 'pm_test_2'))
+        ->assertOk();
+
+    $booking = $this->booking->fresh();
+    expect($booking->stripe_payment_method_id)->toBeNull()
+        ->and($booking->balance_due_at)->toBeNull();
 });
 
 it('nets a full refund back to a zero balance on refund.updated', function () {

@@ -54,6 +54,7 @@ function money(cents) {
 const canCancel = computed(() => ['pending_payment', 'confirmed'].includes(props.booking.status));
 const canCheckIn = computed(() => props.booking.status === 'confirmed');
 const canCheckOut = computed(() => props.booking.status === 'checked_in');
+const canChangeDates = computed(() => !props.booking.balance_paid);
 
 function checkIn() {
     router.post(`/reservations/${props.booking.id}/check-in`, {}, { preserveScroll: true });
@@ -265,7 +266,11 @@ function applyOption(option) {
 
                 <div class="rounded-lg border border-gold-500/20 bg-white p-6">
                     <h2 class="font-serif text-lg">Change dates / room</h2>
-                    <div class="mt-3 flex flex-wrap items-end gap-3">
+                    <p v-if="!canChangeDates" class="mt-3 text-sm opacity-60">
+                        The balance has already been charged for this reservation — dates and room
+                        can no longer be changed.
+                    </p>
+                    <div v-else class="mt-3 flex flex-wrap items-end gap-3">
                         <div>
                             <label class="block text-xs uppercase tracking-wide opacity-50">Check-in</label>
                             <input
