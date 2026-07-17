@@ -12,12 +12,13 @@ RUN apk add --no-cache \
         libzip-dev \
         libpng-dev \
         libjpeg-turbo-dev \
+        libwebp-dev \
         freetype-dev \
         oniguruma-dev \
         icu-dev \
         icu-data-full \
         $PHPIZE_DEPS \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         pdo_pgsql \
         pgsql \

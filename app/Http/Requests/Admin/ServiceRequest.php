@@ -29,6 +29,10 @@ class ServiceRequest extends FormRequest
             'unit_price' => ['required', 'numeric', 'min:0'],
             'pricing_type' => ['required', new Enum(ServicePricingType::class)],
             'active' => ['boolean'],
+            'images' => ['array'],
+            'images.*' => ['image', 'max:5120'],
+            'remove_images' => ['array'],
+            'remove_images.*' => ['integer'],
         ];
     }
 
