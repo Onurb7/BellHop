@@ -13,7 +13,7 @@ class PaymentReminderMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Booking $booking, public int $balanceDueCents)
+    public function __construct(public Booking $booking, public int $balanceDueCents, public bool $willAutoCancel = false)
     {
     }
 
@@ -31,6 +31,7 @@ class PaymentReminderMail extends Mailable
             with: [
                 'booking' => $this->booking,
                 'balanceDueCents' => $this->balanceDueCents,
+                'willAutoCancel' => $this->willAutoCancel,
             ],
         );
     }

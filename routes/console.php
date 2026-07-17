@@ -25,3 +25,9 @@ Schedule::command('bookings:charge-due-balances')->dailyAt('03:00');
 // 24h grace window after a charge decline or a no-saved-card reminder —
 // run after the job above, not concurrently with it.
 Schedule::command('bookings:cancel-unpaid-balances')->dailyAt('04:00');
+
+// Checked-out bookings with a balance still owed (e.g. incidentals) never
+// auto-cancel — the stay already happened — so this just nudges the guest
+// once a day until it's settled, same PaymentReminderMail staff can also
+// send manually from the reservation page.
+Schedule::command('bookings:remind-checked-out-balances')->dailyAt('08:00');

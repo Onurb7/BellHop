@@ -37,7 +37,7 @@ class ChargeDueBalances extends Command
             // nothing to charge, so this is the reminder path instead.
             if (! $booking->stripe_payment_method_id) {
                 $booking->update(['balance_due_at' => null, 'balance_collection_failed_at' => now()]);
-                Mail::to($booking->guest->email)->send(new PaymentReminderMail($booking, $amountCents));
+                Mail::to($booking->guest->email)->send(new PaymentReminderMail($booking, $amountCents, willAutoCancel: true));
                 $reminded++;
 
                 continue;

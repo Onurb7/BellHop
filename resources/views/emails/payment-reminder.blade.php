@@ -24,6 +24,15 @@
                             <strong>Balance due:</strong> ${{ number_format($balanceDueCents / 100, 2) }}
                         </td>
                     </tr>
+                    @if($willAutoCancel)
+                    <tr>
+                        <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#a33b1e;">
+                            <strong>Please note:</strong> if this balance isn't settled within the
+                            next 24 hours, your reservation will be automatically cancelled and the
+                            room released.
+                        </td>
+                    </tr>
+                    @endif
                     <tr>
                         <td style="font-size:14px; line-height:1.6; padding-top:24px; color:#6b5330;">
                             Please settle this balance with the front desk at your earliest

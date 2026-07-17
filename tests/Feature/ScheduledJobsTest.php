@@ -103,7 +103,7 @@ it('sends a payment reminder instead of charging when no card was saved', functi
     $booking = $booking->fresh();
     expect($booking->balance_due_at)->toBeNull()
         ->and($booking->balance_collection_failed_at)->not->toBeNull();
-    Mail::assertSent(\App\Mail\PaymentReminderMail::class);
+    Mail::assertSent(\App\Mail\PaymentReminderMail::class, fn ($mail) => $mail->willAutoCancel === true);
 });
 
 it('cancels a confirmed booking whose balance collection failed more than 24 hours ago', function () {
@@ -144,4 +144,34 @@ it('cancels a confirmed booking whose balance collection failed more than 24 hou
         ->and($withinGrace->fresh()->status)->toBe(BookingStatus::Confirmed)
         ->and($paidInTheMeantime->fresh()->status)->toBe(BookingStatus::Confirmed);
     Mail::assertSent(\App\Mail\BookingCancelledNonPaymentMail::class, 1);
+});
+
+it('reminds a checked-out booking with an unpaid balance but never threatens cancellation', function () {
+    Mail::fake();
+
+    $guest = Guest::factory()->create();
+    $unpaid = Booking::factory()->create([
+        'guest_id' => $guest->id,
+        'status' => BookingStatus::CheckedOut,
+        'deposit_cents' => 30000,
+    ]);
+    $unpaid->charges()->create(['category' => 'room', 'description' => 'Room charge', 'amount_cents' => 100000]);
+    $unpaid->payments()->create(['kind' => 'deposit', 'amount_cents' => 30000, 'verified_at' => now()]);
+
+    $settled = Booking::factory()->create([
+        'guest_id' => $guest->id,
+        'status' => BookingStatus::CheckedOut,
+        'deposit_cents' => 100000,
+    ]);
+    $settled->charges()->create(['category' => 'room', 'description' => 'Room charge', 'amount_cents' => 100000]);
+    $settled->payments()->create(['kind' => 'deposit', 'amount_cents' => 100000, 'verified_at' => now()]);
+
+    $this->artisan('bookings:remind-checked-out-balances')->assertSuccessful();
+
+    Mail::assertSent(
+        \App\Mail\PaymentReminderMail::class,
+        fn ($mail) => $mail->booking->is($unpaid) && $mail->willAutoCancel === false
+    );
+    Mail::assertSent(\App\Mail\PaymentReminderMail::class, 1);
+    expect($unpaid->fresh()->last_reminder_type)->toBe('payment');
 });
