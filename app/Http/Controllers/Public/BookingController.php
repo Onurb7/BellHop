@@ -41,7 +41,12 @@ class BookingController extends Controller
                 Carbon::parse($data['check_out']),
             );
         } catch (RoomUnavailableException) {
-            return back()->withErrors(['room_id' => 'That room was just taken — please pick another, or adjust your dates.']);
+            // Deliberately neutral wording: this fires both for a genuine
+            // race (available in a search list moments ago, taken since)
+            // and for dates typed directly on the room page that were
+            // never available — "just taken" implied the latter case too,
+            // which reads as misleading when nobody actually beat you to it.
+            return back()->withErrors(['room_id' => 'This room isn\'t available for the selected dates — please try different dates.']);
         }
 
         return redirect()->route('booking.show', $booking);

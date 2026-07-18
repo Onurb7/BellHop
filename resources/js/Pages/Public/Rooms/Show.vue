@@ -118,7 +118,7 @@ function bookNow() {
                             @click="bookNow"
                             class="w-full rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                         >
-                            {{ locking ? 'Checking…' : 'Book this room' }}
+                            {{ locking ? 'Checking…' : 'Check Availability' }}
                         </button>
                         <p class="text-center text-xs opacity-50">A 30% deposit secures your reservation.</p>
                     </div>
