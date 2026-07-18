@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Currency;
 use App\Enums\DateFormat;
 use App\Enums\TimeFormat;
 use App\Enums\WeekStart;
@@ -21,6 +22,7 @@ class SettingsController extends Controller
             'date_format' => $user->getSetting('date_format', DateFormat::Iso->value),
             'time_format' => $user->getSetting('time_format', TimeFormat::TwentyFourHour->value),
             'week_start' => $user->getSetting('week_start', WeekStart::Monday->value),
+            'currency' => $user->getSetting('currency', Currency::Usd->value),
         ]);
     }
 
