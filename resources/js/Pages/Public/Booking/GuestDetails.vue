@@ -2,15 +2,17 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import ServiceSelectCards from '../../../Components/ServiceSelectCards.vue';
 import { useDateFormat } from '../../../Composables/useDateFormat.js';
-import { useMoney } from '../../../Composables/useMoney.js';
+import { useMoney, convertCents } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
+    services: Array,
 });
 
 const { formatDate } = useDateFormat();
-const { money } = useMoney();
+const { money, rates } = useMoney();
 
 const form = useForm({
     first_name: '',
@@ -18,14 +20,51 @@ const form = useForm({
     email: '',
     phone: '',
     address: '',
+    services: [],
+});
+
+// The room charge is still in the room type's own currency at this point
+// (conversion to USD only happens once storeGuest() creates the real
+// charge row) and each service carries its own currency too — pivot
+// everything through USD before summing so mixed currencies add up
+// correctly, then let money() convert the USD sum to the viewer's
+// preferred display currency.
+const totalCents = computed(() => {
+    const roomUsdCents = convertCents(props.booking.total_cents, props.booking.currency, 'USD', rates.value);
+
+    const servicesUsdCents = props.services
+        .filter((service) => form.services.includes(service.id))
+        .reduce((sum, service) => {
+            const cents = service.pricing_type === 'per_night'
+                ? service.unit_price_cents * props.booking.nights
+                : service.unit_price_cents;
+
+            return sum + convertCents(cents, service.currency, 'USD', rates.value);
+        }, 0);
+
+    return roomUsdCents + servicesUsdCents;
 });
 
 const secondsLeft = ref(Math.max(0, Math.floor((new Date(props.booking.expires_at) - new Date()) / 1000)));
 let timer = null;
 
 onMounted(() => {
+    // The hold has already expired server-side too (see
+    // BookingController::lock()'s 15-minute window) — abandon it and send
+    // the guest back to search rather than leaving them stuck on a page
+    // where every action would just fail against an expired booking.
+    if (secondsLeft.value <= 0) {
+        cancel();
+        return;
+    }
+
     timer = setInterval(() => {
         secondsLeft.value = Math.max(0, secondsLeft.value - 1);
+
+        if (secondsLeft.value <= 0) {
+            clearInterval(timer);
+            cancel();
+        }
     }, 1000);
 });
 
@@ -104,6 +143,13 @@ function cancel() {
                             <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
                         </div>
 
+                        <div v-if="services.length" class="sm:col-span-2">
+                            <label class="block text-xs uppercase tracking-wide opacity-50">Add for your whole stay (optional)</label>
+                            <div class="mt-2">
+                                <ServiceSelectCards v-model="form.services" :services="services" :nights="booking.nights" />
+                            </div>
+                        </div>
+
                         <div class="sm:col-span-2">
                             <button
                                 type="submit"
@@ -121,6 +167,10 @@ function cancel() {
                 <div class="rounded-lg border border-gold-500/20 bg-white p-6">
                     <p class="text-xs uppercase tracking-wide opacity-50">Room held for</p>
                     <p class="mt-1 font-serif text-2xl" :class="secondsLeft < 60 ? 'text-red-600' : ''">{{ countdown }}</p>
+                    <p class="mt-1 text-xs opacity-50">
+                        We hold this room for 15 minutes so you have time to complete your details and payment.
+                        If the timer runs out, you'll need to search again.
+                    </p>
 
                     <dl class="mt-4 space-y-2 text-sm">
                         <div class="flex justify-between">
@@ -137,12 +187,18 @@ function cancel() {
                         </div>
                         <div class="flex justify-between border-t border-black/10 pt-2 font-medium">
                             <dt>Total</dt>
-                            <dd>{{ money(booking.total_cents, booking.currency) }}</dd>
+                            <dd>{{ money(totalCents, 'USD') }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="opacity-60">Deposit due (30%)</dt>
+                            <dt class="opacity-60">{{ booking.is_deposit_plan ? 'Deposit due (30% of room)' : 'Due now (full payment)' }}</dt>
                             <dd>{{ money(booking.deposit_cents, booking.currency) }}</dd>
                         </div>
+                        <p v-if="form.services.length" class="text-xs opacity-50">
+                            Selected services are billed post checkout and are not part of today's payment.
+                        </p>
+                        <p class="text-xs opacity-50">
+                            Reservations made within 3 days of check-in are required to be paid in full.
+                        </p>
                     </dl>
                 </div>
             </div>

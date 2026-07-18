@@ -142,6 +142,28 @@ it('never saves a card for a full-payment booking, even if Stripe returns a paym
         ->and($booking->balance_due_at)->toBeNull();
 });
 
+it('never schedules a balance auto-charge for a full-payment booking just because a service charge was also added', function () {
+    // Regression: deposit_cents (100000, covers the room in full) used to
+    // be compared against totalCents() (which now also includes the
+    // service charge below), making this look like a genuine deposit
+    // plan and scheduling balance_due_at 3 days before check-in — even
+    // for a same-day booking, where that date is already in the past.
+    $this->booking->update(['deposit_cents' => 100000]);
+    $this->booking->charges()->create([
+        'category' => BookingChargeCategory::Service,
+        'description' => 'Breakfast — 2 night(s)',
+        'amount_cents' => 4000,
+    ]);
+
+    postStripeWebhook(paymentSucceededPayload('evt_full_pay_with_services', $this->booking, 'deposit', 100000, 'pi_full_pay_with_services', 'pm_test_4'))
+        ->assertOk();
+
+    $booking = $this->booking->fresh();
+    expect($booking->isDepositPlan())->toBeFalse()
+        ->and($booking->stripe_payment_method_id)->toBeNull()
+        ->and($booking->balance_due_at)->toBeNull();
+});
+
 it('nets a full refund back to a zero balance on refund.updated', function () {
     postStripeWebhook(paymentSucceededPayload('evt_full_pay', $this->booking, 'deposit', 100000, 'pi_4'))->assertOk();
     // Pay the balance too so the booking is fully paid, matching a real

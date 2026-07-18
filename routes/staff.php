@@ -21,6 +21,7 @@ Route::middleware(['auth', 'role:staff|admin|super-admin'])
 
             Route::get('/', [ReservationController::class, 'index'])->name('index');
             Route::get('/{booking}', [ReservationController::class, 'show'])->name('show');
+            Route::post('/{booking}/services', [ReservationController::class, 'addService'])->name('services.store');
             Route::post('/{booking}/verify-payment', [ReservationController::class, 'verifyPayment'])->name('verify-payment');
             Route::post('/{booking}/payments/{payment}/refund', [StripePaymentController::class, 'refund'])->name('payments.refund');
             Route::post('/{booking}/cancel', [ReservationController::class, 'cancel'])->name('cancel');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BookingChargeCategory;
 use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -73,6 +74,11 @@ class Booking extends Model implements HasMedia
         return $this->hasMany(BookingPayment::class);
     }
 
+    public function services(): HasMany
+    {
+        return $this->hasMany(BookingService::class);
+    }
+
     /**
      * Derived from the charge ledger, not stored — the total can never
      * drift out of sync with the itemized history this way.
@@ -94,6 +100,25 @@ class Booking extends Model implements HasMedia
     public function balanceDueCents(): int
     {
         return $this->totalCents() - $this->amountPaidCents();
+    }
+
+    /**
+     * Whether the *room* charge itself was split into a deposit + later
+     * balance (booked more than 3 days before check-in), as opposed to
+     * paid in full up front. Deliberately compares against the room
+     * charge alone, never totalCents() — service charges are always
+     * additional to the total but are never covered by (or split via)
+     * the deposit, so a same-day full-payment booking with services
+     * attached must not be mistaken for a deposit plan just because
+     * totalCents() > deposit_cents once those services are added.
+     */
+    public function isDepositPlan(): bool
+    {
+        $roomChargeCents = $this->relationLoaded('charges')
+            ? $this->charges->where('category', BookingChargeCategory::Room)->sum('amount_cents')
+            : (int) $this->charges()->where('category', BookingChargeCategory::Room)->sum('amount_cents');
+
+        return $this->deposit_cents < $roomChargeCents;
     }
 
     public function hasInvoice(): bool

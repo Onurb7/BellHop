@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Public;
 
 use App\Enums\BookingChargeCategory;
 use App\Enums\BookingStatus;
+use App\Enums\ServicePricingType;
 use App\Exceptions\RoomUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Guest;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
+use App\Services\ServicePurchaseService;
 use App\Services\StripePaymentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +33,7 @@ class BookingController extends Controller
 
         $data = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
-            'check_in' => ['required', 'date'],
+            'check_in' => ['required', 'date', 'after_or_equal:today'],
             'check_out' => ['required', 'date', 'after:check_in'],
         ]);
 
@@ -64,6 +67,12 @@ class BookingController extends Controller
         if ($booking->guest_id === null) {
             $nights = $booking->check_in->diffInDays($booking->check_out);
             $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+            // Mirrors storeGuest()'s canOfferDeposit exactly — this is
+            // only a preview, but it must match what actually gets
+            // charged once guest details are submitted, or the guest
+            // sees one number here and a different one on the payment
+            // page.
+            $canOfferDeposit = now()->addDays(3)->lt($booking->check_in);
 
             return Inertia::render('Public/Booking/GuestDetails', [
                 'booking' => [
@@ -73,7 +82,8 @@ class BookingController extends Controller
                     'expires_at' => $booking->expires_at->toIso8601String(),
                     'nights' => $nights,
                     'total_cents' => $roomChargeCents,
-                    'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                    'deposit_cents' => $canOfferDeposit ? (int) round($roomChargeCents * 0.3) : $roomChargeCents,
+                    'is_deposit_plan' => $canOfferDeposit,
                     // Not yet converted to USD — that only happens once a
                     // real charge row is created in storeGuest(). This is
                     // still just the room type's own listed price.
@@ -83,6 +93,14 @@ class BookingController extends Controller
                         'room_type' => $booking->room->roomType->name,
                     ],
                 ],
+                'services' => Service::where('active', true)->orderBy('name')->get()->map(fn (Service $service) => [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'unit_price_cents' => $service->unit_price_cents,
+                    'currency' => $service->currency,
+                    'pricing_type' => $service->pricing_type->value,
+                    'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
+                ]),
             ]);
         }
 
@@ -92,11 +110,13 @@ class BookingController extends Controller
             ['booking' => $booking],
         );
 
-        $isDepositPlan = $booking->deposit_cents < $booking->totalCents();
+        $isDepositPlan = $booking->isDepositPlan();
 
         return Inertia::render('Public/Booking/Pay', [
             'booking' => [
                 'id' => $booking->id,
+                'status' => $booking->status->value,
+                'expires_at' => $booking->expires_at?->toIso8601String(),
                 'total_cents' => $booking->totalCents(),
                 'deposit_cents' => $booking->deposit_cents,
                 'balance_due_cents' => $booking->balanceDueCents(),
@@ -112,7 +132,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, ServicePurchaseService $servicePurchase): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('rooms.index')
@@ -125,6 +145,8 @@ class BookingController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'services' => ['array'],
+            'services.*' => ['integer', 'exists:services,id'],
         ]);
 
         $guest = $this->resolveGuest($data);
@@ -166,6 +188,21 @@ class BookingController extends Controller
                 'amount_cents' => $roomChargeCents,
             ]);
         });
+
+        // Deliberately outside the transaction above and after it commits —
+        // each selected service is applied via the same shared purchase
+        // logic post-booking purchases use, one row at a time.
+        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
+
+        foreach ($selectedServices as $service) {
+            $servicePurchase->purchase(
+                $booking,
+                $service,
+                1,
+                $service->pricing_type === ServicePricingType::PerNight ? $nights : null,
+                auth()->id(),
+            );
+        }
 
         return redirect()->route('booking.show', $booking);
     }
@@ -209,6 +246,14 @@ class BookingController extends Controller
     {
         if ($booking->guest_id === null) {
             $booking->delete();
+        } elseif ($booking->status === BookingStatus::PendingPayment) {
+            // Once guest details are attached the booking can no longer
+            // just be deleted (real charge/payment rows may already
+            // reference it) — cancel() is what actually releases the
+            // room via the exclusion constraint. Guarded to PendingPayment
+            // only: a booking that has since been confirmed (e.g. the
+            // guest paid in another tab) must never be cancelled here.
+            $booking->cancel();
         }
 
         return redirect()->route('rooms.index');

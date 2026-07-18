@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     // principle be linked to a `guests` row.
     Route::get('my-reservations/{booking}', [GuestReservationController::class, 'show'])->name('guest-reservations.show');
     Route::post('my-reservations/{booking}/stripe/intent', [GuestReservationController::class, 'createPaymentIntent'])->name('guest-reservations.stripe.intent');
+    Route::post('my-reservations/{booking}/services', [GuestReservationController::class, 'purchaseService'])->name('guest-reservations.services.store');
 
     Route::get('invoices/{booking}', [InvoiceController::class, 'download'])->name('invoices.download');
 });

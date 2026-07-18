@@ -77,7 +77,9 @@ instead of repeating that pattern.
   attempt (tab closed mid-flow) is swept lazily on the next search rather
   than needing a background job. The reservations list itself is
   paginated and searchable, and the date picker rejects invalid
-  check-in/check-out ranges before a search is even attempted.
+  check-in/check-out ranges (including a check-in date in the past) before
+  a search is even attempted — enforced server-side too, on both this flow
+  and the public one below, not just in the date input's `min` attribute.
 - **Staff/admin capacity dashboard** — hand-rolled SVG charts (no
   charting library) showing today's occupancy/check-in/check-out KPIs, an
   occupancy trend line toggleable by day/week/month, and average-occupancy
@@ -109,6 +111,19 @@ instead of repeating that pattern.
   currency the room was priced in or what the guest has since set as
   their display preference. The Settings page also shows a live
   USD-relative exchange-rate table for a handful of major currencies.
+- **Purchasable services, selected at booking or added anytime after** —
+  breakfast, parking, a pet fee, and the rest of the admin-managed catalog
+  can be added as full-stay checkboxes right on the booking form (each
+  service shown as an image card that lights up gold when selected, with
+  the live total updating as you pick), or purchased afterward in
+  whatever quantity actually applies — 2 nights of breakfast on a 7-night
+  stay, say — by the guest from their own account or by staff at the
+  front desk, both going through the same `ServicePurchaseService` so the
+  currency conversion and ledger math can't drift between the two paths.
+  Service charges always land on the balance, never the 30% deposit — a
+  same-day full-payment booking with services attached is still detected
+  correctly as full payment, not mistaken for a deposit plan just because
+  the total grew.
 - **Real Stripe payments, refunds, and PDF invoicing** — guests pay their
   own deposit/balance via an embedded Stripe Card Element on their own
   reservation page; a webhook handler backed by an idempotency ledger
@@ -143,7 +158,10 @@ instead of repeating that pattern.
   actions) and `markNoShow()` (a nightly sweep), and six real Artisan
   commands run on the `scheduler` service instead of sitting idle:
   abandoned public checkouts get cancelled automatically instead of
-  blocking a room forever, past-due confirmed stays with no check-in
+  blocking a room forever — a visible countdown on both the guest-details
+  and payment steps releases the hold the moment it runs out (or the
+  guest explicitly backs out) rather than leaving the room locked until
+  the next scheduled sweep — past-due confirmed stays with no check-in
   become no-shows, and — for deposit-plan bookings — the remaining room
   balance is due 3 days before check-in. A booking made within 3 days of
   check-in skips the deposit split entirely and requires full payment up
@@ -178,11 +196,12 @@ instead of repeating that pattern.
   deliberately not exhaustive: Pest feature tests covering
   availability/locking, the charge/payment ledger math, the Stripe
   webhook handler (idempotency, payment confirmation, refund-netting),
-  the guest-account auto-linking security rule, and the booking-time
-  currency conversion, plus Vitest tests for the payment component and
-  the currency-conversion math. Tests run against a real Postgres test
-  database, not SQLite — SQLite can't create the `bookings` table's
-  exclusion constraint at all.
+  the guest-account auto-linking security rule, the booking-time currency
+  conversion, the purchasable-services ledger math, and deposit-plan
+  detection staying correct once service charges are in the mix, plus
+  Vitest tests for the payment component and the currency-conversion
+  math. Tests run against a real Postgres test database, not SQLite —
+  SQLite can't create the `bookings` table's exclusion constraint at all.
 
 ## Tech stack
 
@@ -244,16 +263,13 @@ designed but not yet built:
   demo-data reseed, all running on the `scheduler` service
 - Multi-currency pricing and live exchange-rate conversion described
   above — real money and invoices always stay in USD
+- Purchasable services described above — booking-time selection and
+  post-booking self-service purchase, both by guest and staff
 
-**Designed, not yet built** (see the full domain plan for detail — kept
-outside this repo since it's working notes, not a deliverable)
-- Amenities/services attached to a booking (`booking_services`) — the
-  `services` catalog exists and is admin-manageable, but nothing lets a
-  guest or staff member actually add one to a stay yet, so there's
-  nothing to bill at checkout beyond the room itself
-
-I'd rather show a smaller surface area that's actually finished and
-correct than a large one that only looks done.
+Every piece of domain functionality originally scoped in the domain plan
+(kept outside this repo since it's working notes, not a deliverable) is
+now shipped. I'd rather show a smaller surface area that's actually
+finished and correct than a large one that only looks done.
 
 ## Getting started
 
