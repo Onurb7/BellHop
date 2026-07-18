@@ -6,6 +6,7 @@ import { FileText } from '@lucide/vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import StripeCardForm from '../../Components/StripeCardForm.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
+import { useMoney } from '../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
@@ -13,6 +14,7 @@ const props = defineProps({
 });
 
 const { formatDate, formatDateTime } = useDateFormat();
+const { money } = useMoney();
 
 const statusLabels = {
     pending_payment: 'Pending Payment',
@@ -46,11 +48,6 @@ const paymentKindLabels = {
     refund: 'Refund',
 };
 
-function money(cents) {
-    const negative = cents < 0;
-    const amount = `$${(Math.abs(cents) / 100).toFixed(2)}`;
-    return negative ? `-${amount}` : amount;
-}
 
 const payPanelOpen = ref(false);
 const loadingIntent = ref(false);

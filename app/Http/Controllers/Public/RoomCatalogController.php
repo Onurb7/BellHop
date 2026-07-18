@@ -56,6 +56,7 @@ class RoomCatalogController extends Controller
                 'floor' => $room->floor,
                 'room_type_name' => $room->roomType->name,
                 'base_rate_cents' => $room->roomType->base_rate_cents,
+                'currency' => $room->roomType->currency,
                 'max_occupancy' => $room->roomType->max_occupancy,
                 'amenities' => $room->amenities->pluck('name'),
                 'images' => $room->getMedia('images')->map(fn ($media) => [
@@ -74,6 +75,7 @@ class RoomCatalogController extends Controller
             'number' => $room->number,
             'room_type_name' => $room->roomType->name,
             'base_rate_cents' => $room->roomType->base_rate_cents,
+            'currency' => $room->roomType->currency,
             'max_occupancy' => $room->roomType->max_occupancy,
             'description' => $room->description,
             'amenities' => $room->amenities->pluck('name'),

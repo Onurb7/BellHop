@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
 import StripeCardForm from '../../../Components/StripeCardForm.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
@@ -11,9 +12,7 @@ const props = defineProps({
     confirmation_url: String,
 });
 
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
+const { money } = useMoney();
 
 const loadingIntent = ref(true);
 const intentError = ref('');

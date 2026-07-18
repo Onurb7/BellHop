@@ -7,6 +7,7 @@ import StatTile from '../Components/Charts/StatTile.vue';
 import BarChart from '../Components/Charts/BarChart.vue';
 import TrendChart from '../Components/Charts/TrendChart.vue';
 import { useDateFormat } from '../Composables/useDateFormat.js';
+import { useMoney } from '../Composables/useMoney.js';
 
 const props = defineProps({
     capacity: {
@@ -23,6 +24,7 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 
 const { formatDate } = useDateFormat();
+const { money } = useMoney();
 
 const statusLabels = {
     pending_payment: 'Pending Payment',
@@ -42,9 +44,6 @@ const statusBadgeClass = {
     no_show: 'bg-red-100 text-red-700',
 };
 
-function money(cents) {
-    return `$${(Math.abs(cents) / 100).toFixed(2)}`;
-}
 
 function nights(booking) {
     return Math.round((new Date(booking.check_out) - new Date(booking.check_in)) / 86400000);
