@@ -1,10 +1,13 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 defineProps({
     services: Array,
 });
+
+const { money } = useMoney();
 
 function destroy(service) {
     if (confirm(`Delete "${service.name}"? This can't be undone.`)) {
@@ -53,7 +56,7 @@ function destroy(service) {
                             <div v-else class="h-12 w-16 rounded bg-black/5"></div>
                         </td>
                         <td class="px-4 py-3 font-medium">{{ service.name }}</td>
-                        <td class="px-4 py-3">${{ service.unit_price.toFixed(2) }}</td>
+                        <td class="px-4 py-3">{{ money(service.unit_price_cents, service.currency) }}</td>
                         <td class="px-4 py-3">{{ service.pricing_type === 'per_night' ? 'Per night' : 'Flat fee' }}</td>
                         <td class="px-4 py-3">
                             <span

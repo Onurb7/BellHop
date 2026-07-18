@@ -18,6 +18,7 @@ class Service extends Model implements HasMedia
         'slug',
         'description',
         'unit_price_cents',
+        'currency',
         'pricing_type',
         'active',
     ];
