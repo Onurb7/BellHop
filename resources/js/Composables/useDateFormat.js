@@ -15,6 +15,18 @@ export function formatDatePart(isoValue, dateFormat) {
     return `${year}-${month}-${day}`;
 }
 
+// Deliberately not toISOString() — that converts to UTC first, which can
+// silently shift the date by a day depending on the browser's local
+// timezone. Mirrors Calendar/Index.vue's toISO() local-field approach.
+export function todayDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 export function formatTimePart(isoValue, timeFormat) {
     const timeSegment = isoValue.includes('T') ? isoValue.split('T')[1] : isoValue.split(' ')[1];
 

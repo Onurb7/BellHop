@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { useMoney } from '../../../Composables/useMoney.js';
+import { todayDateString } from '../../../Composables/useDateFormat.js';
 
 const props = defineProps({
     check_in: String,
@@ -16,10 +17,14 @@ const checkIn = ref(props.check_in ?? '');
 const checkOut = ref(props.check_out ?? '');
 const guestCount = ref(props.guests ?? '');
 const locking = ref(null);
+const todayString = todayDateString();
 
 const { money } = useMoney();
 
 const dateError = computed(() => {
+    if (checkIn.value && checkIn.value < todayString) {
+        return 'Check-in can\'t be in the past.';
+    }
     if (!checkIn.value || !checkOut.value) {
         return '';
     }
@@ -72,6 +77,7 @@ const searched = computed(() => props.check_in && props.check_out);
                     <input
                         v-model="checkIn"
                         type="date"
+                        :min="todayString"
                         class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     />
                 </div>
@@ -80,7 +86,7 @@ const searched = computed(() => props.check_in && props.check_out);
                     <input
                         v-model="checkOut"
                         type="date"
-                        :min="checkIn || undefined"
+                        :min="checkIn || todayString"
                         class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     />
                 </div>

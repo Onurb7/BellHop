@@ -4,7 +4,9 @@ use App\Enums\BookingChargeCategory;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\User;
 use App\Services\RoomAvailabilityService;
+use Spatie\Permission\Models\Role;
 
 /**
  * No Inertia testing helpers are installed in this project (no other test
@@ -84,4 +86,34 @@ it('still previews a 30% deposit for a booking more than 3 days out', function (
 
     expect($props['booking']['is_deposit_plan'])->toBeTrue()
         ->and($props['booking']['deposit_cents'])->toBe(6000);
+});
+
+it('rejects locking a room with a check-in date in the past on the public booking flow', function () {
+    $roomType = RoomType::factory()->create();
+    $room = Room::factory()->create(['room_type_id' => $roomType->id]);
+
+    $this->post('/book/lock', [
+        'room_id' => $room->id,
+        'check_in' => today()->subDay()->toDateString(),
+        'check_out' => today()->addDay()->toDateString(),
+    ])->assertSessionHasErrors('check_in');
+
+    expect(Booking::where('room_id', $room->id)->exists())->toBeFalse();
+});
+
+it('rejects locking a room with a check-in date in the past on the staff reservation flow', function () {
+    Role::findOrCreate('staff');
+    $staff = User::factory()->create();
+    $staff->assignRole('staff');
+
+    $roomType = RoomType::factory()->create();
+    $room = Room::factory()->create(['room_type_id' => $roomType->id]);
+
+    $this->actingAs($staff)->post('/reservations/new/lock', [
+        'room_id' => $room->id,
+        'check_in' => today()->subDay()->toDateString(),
+        'check_out' => today()->addDay()->toDateString(),
+    ])->assertSessionHasErrors('check_in');
+
+    expect(Booking::where('room_id', $room->id)->exists())->toBeFalse();
 });

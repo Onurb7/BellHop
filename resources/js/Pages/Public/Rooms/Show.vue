@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import { Check, ImageOff, Users } from '@lucide/vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
 import { useMoney } from '../../../Composables/useMoney.js';
+import { todayDateString } from '../../../Composables/useDateFormat.js';
 
 const props = defineProps({
     room: Object,
@@ -15,8 +16,12 @@ const query = new URLSearchParams(window.location.search);
 const checkIn = ref(query.get('check_in') ?? '');
 const checkOut = ref(query.get('check_out') ?? '');
 const locking = ref(false);
+const todayString = todayDateString();
 
 const dateError = computed(() => {
+    if (checkIn.value && checkIn.value < todayString) {
+        return 'Check-in can\'t be in the past.';
+    }
     if (!checkIn.value || !checkOut.value) {
         return '';
     }
@@ -97,6 +102,7 @@ function bookNow() {
                             <input
                                 v-model="checkIn"
                                 type="date"
+                                :min="todayString"
                                 class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                             />
                         </div>
@@ -105,7 +111,7 @@ function bookNow() {
                             <input
                                 v-model="checkOut"
                                 type="date"
-                                :min="checkIn || undefined"
+                                :min="checkIn || todayString"
                                 class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                             />
                         </div>
