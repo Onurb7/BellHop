@@ -44,22 +44,25 @@ class DemoHotelSeeder extends Seeder
         $amenities = collect(['TV', 'Private Bathroom', 'Air Conditioning', 'Minibar', 'Balcony', 'Free WiFi'])
             ->map(fn (string $name) => Amenity::firstOrCreate(['name' => $name]));
 
+        // A couple of non-USD entries so the multi-currency display
+        // conversion is actually visible in the demo out of the box,
+        // instead of everything defaulting to USD.
         $roomTypes = collect([
-            ['name' => 'Classic Room', 'slug' => 'classic-room', 'base_rate_cents' => 12000, 'max_occupancy' => 2],
-            ['name' => 'Deluxe Room', 'slug' => 'deluxe-room', 'base_rate_cents' => 18000, 'max_occupancy' => 3],
-            ['name' => 'Executive Suite', 'slug' => 'executive-suite', 'base_rate_cents' => 32000, 'max_occupancy' => 4],
+            ['name' => 'Classic Room', 'slug' => 'classic-room', 'base_rate_cents' => 12000, 'currency' => 'USD', 'max_occupancy' => 2],
+            ['name' => 'Deluxe Room', 'slug' => 'deluxe-room', 'base_rate_cents' => 16500, 'currency' => 'EUR', 'max_occupancy' => 3],
+            ['name' => 'Executive Suite', 'slug' => 'executive-suite', 'base_rate_cents' => 25000, 'currency' => 'GBP', 'max_occupancy' => 4],
         ])->map(fn (array $attributes) => RoomType::create($attributes));
 
         collect([
-            ['name' => 'Parking', 'slug' => 'parking', 'unit_price_cents' => 1500, 'pricing_type' => ServicePricingType::PerNight],
-            ['name' => 'Breakfast', 'slug' => 'breakfast', 'unit_price_cents' => 2000, 'pricing_type' => ServicePricingType::PerNight],
-            ['name' => 'Late Checkout', 'slug' => 'late-checkout', 'unit_price_cents' => 3000, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'Airport Shuttle', 'slug' => 'airport-shuttle', 'unit_price_cents' => 4500, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'Spa Treatment', 'slug' => 'spa-treatment', 'unit_price_cents' => 8000, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'Minibar Restock', 'slug' => 'minibar-restock', 'unit_price_cents' => 2500, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'In-Room Dining', 'slug' => 'in-room-dining', 'unit_price_cents' => 3500, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'Pet Fee', 'slug' => 'pet-fee', 'unit_price_cents' => 2000, 'pricing_type' => ServicePricingType::Flat],
-            ['name' => 'Bike Rental', 'slug' => 'bike-rental', 'unit_price_cents' => 1800, 'pricing_type' => ServicePricingType::PerNight],
+            ['name' => 'Parking', 'slug' => 'parking', 'unit_price_cents' => 1500, 'currency' => 'USD', 'pricing_type' => ServicePricingType::PerNight],
+            ['name' => 'Breakfast', 'slug' => 'breakfast', 'unit_price_cents' => 2000, 'currency' => 'USD', 'pricing_type' => ServicePricingType::PerNight],
+            ['name' => 'Late Checkout', 'slug' => 'late-checkout', 'unit_price_cents' => 3000, 'currency' => 'USD', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Airport Shuttle', 'slug' => 'airport-shuttle', 'unit_price_cents' => 4000, 'currency' => 'EUR', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Spa Treatment', 'slug' => 'spa-treatment', 'unit_price_cents' => 1200000, 'currency' => 'JPY', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Minibar Restock', 'slug' => 'minibar-restock', 'unit_price_cents' => 2500, 'currency' => 'USD', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'In-Room Dining', 'slug' => 'in-room-dining', 'unit_price_cents' => 3500, 'currency' => 'USD', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Pet Fee', 'slug' => 'pet-fee', 'unit_price_cents' => 2000, 'currency' => 'USD', 'pricing_type' => ServicePricingType::Flat],
+            ['name' => 'Bike Rental', 'slug' => 'bike-rental', 'unit_price_cents' => 1800, 'currency' => 'USD', 'pricing_type' => ServicePricingType::PerNight],
         ])->each(function (array $attributes) {
             $service = Service::create(['active' => true, ...$attributes]);
             $this->attachMasterImage($service, database_path("seeders/assets/services/{$service->slug}.webp"));
