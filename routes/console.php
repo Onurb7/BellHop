@@ -37,3 +37,7 @@ Schedule::command('bookings:remind-checked-out-balances')->dailyAt('08:00');
 // room types, amenities and services (and their images) are permanently
 // static and untouched by this. Disable via DEMO_RESEED_ACTIVITY_ENABLED=false.
 Schedule::command('demo:reseed-activity')->monthlyOn(1, '01:00');
+
+// Keeps the exchange-rate cache warm so no page load ever blocks on a live
+// API call — cache TTL is 24h, this runs well inside that window.
+Schedule::command('exchange-rates:refresh')->dailyAt('01:15');
