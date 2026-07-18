@@ -67,6 +67,12 @@ class BookingController extends Controller
         if ($booking->guest_id === null) {
             $nights = $booking->check_in->diffInDays($booking->check_out);
             $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+            // Mirrors storeGuest()'s canOfferDeposit exactly — this is
+            // only a preview, but it must match what actually gets
+            // charged once guest details are submitted, or the guest
+            // sees one number here and a different one on the payment
+            // page.
+            $canOfferDeposit = now()->addDays(3)->lt($booking->check_in);
 
             return Inertia::render('Public/Booking/GuestDetails', [
                 'booking' => [
@@ -76,7 +82,8 @@ class BookingController extends Controller
                     'expires_at' => $booking->expires_at->toIso8601String(),
                     'nights' => $nights,
                     'total_cents' => $roomChargeCents,
-                    'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                    'deposit_cents' => $canOfferDeposit ? (int) round($roomChargeCents * 0.3) : $roomChargeCents,
+                    'is_deposit_plan' => $canOfferDeposit,
                     // Not yet converted to USD — that only happens once a
                     // real charge row is created in storeGuest(). This is
                     // still just the room type's own listed price.
@@ -103,7 +110,7 @@ class BookingController extends Controller
             ['booking' => $booking],
         );
 
-        $isDepositPlan = $booking->deposit_cents < $booking->totalCents();
+        $isDepositPlan = $booking->isDepositPlan();
 
         return Inertia::render('Public/Booking/Pay', [
             'booking' => [

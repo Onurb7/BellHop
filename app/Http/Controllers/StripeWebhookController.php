@@ -98,12 +98,18 @@ class StripeWebhookController extends Controller
     }
 
     /**
-     * Only genuine deposit-plan bookings (deposit_cents < totalCents())
-     * need `balance_due_at` set at all — a full-payment booking has
-     * nothing left to collect. The card/Customer only get saved if the
-     * guest actually opted in (`Public\BookingController::createPaymentIntent()`);
-     * checking `$intent['payment_method']` alone isn't enough to tell
-     * consent apart from a non-consenting deposit, since Stripe returns a
+     * Only genuine deposit-plan bookings (Booking::isDepositPlan() — the
+     * room charge itself was split, not just "there happen to be more
+     * charges than the deposit covers") need `balance_due_at` set at all.
+     * Comparing against totalCents() here would be wrong: service charges
+     * always sit on top of the total but are never covered by the
+     * deposit, so a same-day full-payment booking with services attached
+     * would otherwise be mistaken for a deposit plan and get a
+     * balance_due_at 3 days *before* a check-in that's already today.
+     * The card/Customer only get saved if the guest actually opted in
+     * (`Public\BookingController::createPaymentIntent()`); checking
+     * `$intent['payment_method']` alone isn't enough to tell consent apart
+     * from a non-consenting deposit, since Stripe returns a
      * `payment_method` on *any* succeeded intent regardless of
      * `setup_future_usage` — the intent's own `setup_future_usage` field
      * is the real signal. Without a saved card,
@@ -114,7 +120,7 @@ class StripeWebhookController extends Controller
     {
         $booking->refresh();
 
-        if ($booking->deposit_cents >= $booking->totalCents()) {
+        if (! $booking->isDepositPlan()) {
             return;
         }
 

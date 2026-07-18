@@ -22,13 +22,16 @@ class StripePaymentService
 
     public function createPaymentIntent(Booking $booking, BookingPaymentKind $kind, int $amountCents, bool $saveCard = false): PaymentIntent
     {
-        // A deposit that doesn't cover the full total is the deposit-plan
-        // case. `setup_future_usage` is only requested when the guest
-        // explicitly opted in (Public\BookingController::createPaymentIntent()
-        // — never assumed) — bookings:charge-due-balances can only
-        // off-session charge the rest 3 days before check-in for bookings
-        // that consented; everyone else gets a reminder email instead.
-        $isDepositPlan = $kind === BookingPaymentKind::Deposit && $amountCents < $booking->totalCents();
+        // A deposit that doesn't cover the room charge in full is the
+        // deposit-plan case (Booking::isDepositPlan() — compares against
+        // the room charge alone, not totalCents(), since service charges
+        // are never covered by the deposit either way). `setup_future_usage`
+        // is only requested when the guest explicitly opted in
+        // (Public\BookingController::createPaymentIntent() — never assumed)
+        // — bookings:charge-due-balances can only off-session charge the
+        // rest 3 days before check-in for bookings that consented;
+        // everyone else gets a reminder email instead.
+        $isDepositPlan = $kind === BookingPaymentKind::Deposit && $booking->isDepositPlan();
 
         return $this->client->paymentIntents->create([
             'amount' => $amountCents,

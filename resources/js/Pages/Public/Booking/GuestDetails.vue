@@ -190,11 +190,14 @@ function cancel() {
                             <dd>{{ money(totalCents, 'USD') }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="opacity-60">Deposit due (30% of room)</dt>
+                            <dt class="opacity-60">{{ booking.is_deposit_plan ? 'Deposit due (30% of room)' : 'Due now (full payment)' }}</dt>
                             <dd>{{ money(booking.deposit_cents, booking.currency) }}</dd>
                         </div>
                         <p v-if="form.services.length" class="text-xs opacity-50">
                             Selected services are billed post checkout and are not part of today's payment.
+                        </p>
+                        <p class="text-xs opacity-50">
+                            Reservations made within 3 days of check-in are required to be paid in full.
                         </p>
                     </dl>
                 </div>
