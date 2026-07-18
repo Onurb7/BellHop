@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     check_in: String,
@@ -16,9 +17,7 @@ const checkOut = ref(props.check_out ?? '');
 const guestCount = ref(props.guests ?? '');
 const locking = ref(null);
 
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
+const { money } = useMoney();
 
 const dateError = computed(() => {
     if (!checkIn.value || !checkOut.value) {
@@ -121,8 +120,8 @@ const searched = computed(() => props.check_in && props.check_out);
                         <p class="text-sm opacity-60">Room {{ room.room_number }} — Floor {{ room.floor }}</p>
                         <p class="mt-2 text-xs opacity-50">Sleeps up to {{ room.max_occupancy }}</p>
                         <p class="mt-3 text-sm">
-                            {{ money(room.nightly_rate_cents) }} / night
-                            <span class="block font-medium">{{ money(room.total_cents) }} total</span>
+                            {{ money(room.nightly_rate_cents, room.currency) }} / night
+                            <span class="block font-medium">{{ money(room.total_cents, room.currency) }} total</span>
                         </p>
                     </div>
                     <button

@@ -3,12 +3,14 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
 import { useDateFormat } from '../../../Composables/useDateFormat.js';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
 });
 
 const { formatDate } = useDateFormat();
+const { money } = useMoney();
 
 const form = useForm({
     first_name: '',
@@ -17,10 +19,6 @@ const form = useForm({
     phone: '',
     address: '',
 });
-
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
 
 const secondsLeft = ref(Math.max(0, Math.floor((new Date(props.booking.expires_at) - new Date()) / 1000)));
 let timer = null;
@@ -139,11 +137,11 @@ function cancel() {
                         </div>
                         <div class="flex justify-between border-t border-black/10 pt-2 font-medium">
                             <dt>Total</dt>
-                            <dd>{{ money(booking.total_cents) }}</dd>
+                            <dd>{{ money(booking.total_cents, booking.currency) }}</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="opacity-60">Deposit due (30%)</dt>
-                            <dd>{{ money(booking.deposit_cents) }}</dd>
+                            <dd>{{ money(booking.deposit_cents, booking.currency) }}</dd>
                         </div>
                     </dl>
                 </div>
