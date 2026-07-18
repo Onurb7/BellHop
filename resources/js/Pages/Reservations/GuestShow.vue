@@ -5,12 +5,14 @@ import axios from 'axios';
 import { FileText } from '@lucide/vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import StripeCardForm from '../../Components/StripeCardForm.vue';
+import AddServiceForm from '../../Components/AddServiceForm.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
 import { useMoney } from '../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
     stripe_publishable_key: String,
+    services: Array,
 });
 
 const { formatDate, formatDateTime } = useDateFormat();
@@ -36,10 +38,13 @@ const statusBadgeClass = {
 
 const chargeCategoryLabels = {
     room: 'Room charge',
+    service: 'Service',
     date_change: 'Date change',
     room_change: 'Room change',
     refund: 'Refund',
 };
+
+const canAddServices = ['confirmed', 'checked_in'].includes(props.booking.status);
 
 const paymentKindLabels = {
     deposit: 'Deposit',
@@ -142,6 +147,14 @@ function onPaymentSucceeded() {
                         </tr>
                     </tfoot>
                 </table>
+
+                <div v-if="canAddServices" class="mt-5 border-t border-black/5 pt-5">
+                    <h3 class="text-sm font-medium">Add a service</h3>
+                    <p class="mt-1 text-xs opacity-50">Breakfast, parking, and more — added to your balance.</p>
+                    <div class="mt-3">
+                        <AddServiceForm :services="services" :nights="booking.nights" :post-url="`/my-reservations/${booking.id}/services`" />
+                    </div>
+                </div>
             </div>
 
             <div class="rounded-lg border border-gold-500/20 bg-white p-6">

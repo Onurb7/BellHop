@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Enums\ServicePricingType;
 use App\Models\Booking;
+use App\Models\Service;
+use App\Services\ServicePurchaseService;
 use App\Services\StripePaymentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,6 +33,7 @@ class GuestReservationController extends Controller
                 'status' => $booking->status->value,
                 'check_in' => $booking->check_in->toDateString(),
                 'check_out' => $booking->check_out->toDateString(),
+                'nights' => $booking->check_in->diffInDays($booking->check_out),
                 'total_cents' => $booking->totalCents(),
                 'amount_paid_cents' => $booking->amountPaidCents(),
                 'balance_due_cents' => $booking->balanceDueCents(),
@@ -54,7 +59,47 @@ class GuestReservationController extends Controller
                 ]),
             ],
             'stripe_publishable_key' => config('services.stripe.key'),
+            'services' => Service::where('active', true)->orderBy('name')->get()->map(fn (Service $service) => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'unit_price_cents' => $service->unit_price_cents,
+                'currency' => $service->currency,
+                'pricing_type' => $service->pricing_type->value,
+            ]),
         ]);
+    }
+
+    /**
+     * Guest self-service equivalent of ReservationController::addService()
+     * (staff front-desk purchase) — same restriction to an active stay,
+     * same shared ServicePurchaseService.
+     */
+    public function purchaseService(Booking $booking, Request $request, ServicePurchaseService $servicePurchase): RedirectResponse
+    {
+        $this->authorizeOwnership($booking, $request);
+
+        $data = $request->validate([
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'nights' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        abort_unless(
+            in_array($booking->status, [BookingStatus::Confirmed, BookingStatus::CheckedIn], true),
+            422,
+            'Services can only be added to an active reservation.',
+        );
+
+        $service = Service::where('active', true)->findOrFail($data['service_id']);
+        $totalNights = $booking->check_in->diffInDays($booking->check_out);
+
+        [$quantity, $nights] = $service->pricing_type === ServicePricingType::PerNight
+            ? [1, min($data['nights'] ?? $totalNights, $totalNights)]
+            : [$data['quantity'] ?? 1, null];
+
+        $servicePurchase->purchase($booking, $service, $quantity, $nights, auth()->id());
+
+        return back()->with('success', "{$service->name} added.");
     }
 
     public function createPaymentIntent(Booking $booking, Request $request, StripePaymentService $stripe): JsonResponse

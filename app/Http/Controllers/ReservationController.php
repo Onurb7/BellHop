@@ -6,6 +6,7 @@ use App\Enums\BookingChargeCategory;
 use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Enums\RoomStatus;
+use App\Enums\ServicePricingType;
 use App\Exceptions\RoomUnavailableException;
 use App\Mail\CheckoutThankYouMail;
 use App\Mail\PaymentReminderMail;
@@ -13,8 +14,10 @@ use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\Room;
+use App\Models\Service;
 use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
+use App\Services\ServicePurchaseService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -150,10 +153,18 @@ class ReservationController extends Controller
                     'room_type' => $booking->room->roomType->name,
                 ],
             ],
+            'services' => Service::where('active', true)->orderBy('name')->get()->map(fn (Service $service) => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'unit_price_cents' => $service->unit_price_cents,
+                'currency' => $service->currency,
+                'pricing_type' => $service->pricing_type->value,
+                'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
+            ]),
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, ServicePurchaseService $servicePurchase): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('reservations.new.search')
@@ -166,6 +177,8 @@ class ReservationController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'services' => ['array'],
+            'services.*' => ['integer', 'exists:services,id'],
         ]);
 
         $guest = Guest::firstOrCreate(
@@ -204,6 +217,18 @@ class ReservationController extends Controller
             ]);
         });
 
+        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
+
+        foreach ($selectedServices as $service) {
+            $servicePurchase->purchase(
+                $booking,
+                $service,
+                1,
+                $service->pricing_type === ServicePricingType::PerNight ? $nights : null,
+                auth()->id(),
+            );
+        }
+
         return redirect()->route('reservations.show', $booking)->with('success', 'Reservation created.');
     }
 
@@ -240,6 +265,7 @@ class ReservationController extends Controller
                 'balance_paid' => $balancePaid,
                 'check_in' => $booking->check_in->toDateString(),
                 'check_out' => $booking->check_out->toDateString(),
+                'nights' => $booking->check_in->diffInDays($booking->check_out),
                 'deposit_cents' => $booking->deposit_cents,
                 'last_reminder_sent_at' => $booking->last_reminder_sent_at?->diffForHumans(),
                 'last_reminder_type' => $booking->last_reminder_type,
@@ -278,7 +304,46 @@ class ReservationController extends Controller
                         && ! in_array($payment->stripe_payment_intent_id, $refundedIntentIds, true),
                 ]),
             ],
+            'services' => Service::where('active', true)->orderBy('name')->get()->map(fn (Service $service) => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'unit_price_cents' => $service->unit_price_cents,
+                'currency' => $service->currency,
+                'pricing_type' => $service->pricing_type->value,
+            ]),
         ]);
+    }
+
+    /**
+     * Front-desk equivalent of the guest's own self-service purchase
+     * (GuestReservationController::purchaseService()) — same restriction
+     * to an active stay, same shared ServicePurchaseService, just reached
+     * from the staff reservation page instead of the guest's account.
+     */
+    public function addService(Booking $booking, Request $request, ServicePurchaseService $servicePurchase): RedirectResponse
+    {
+        $data = $request->validate([
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'nights' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        abort_unless(
+            in_array($booking->status, [BookingStatus::Confirmed, BookingStatus::CheckedIn], true),
+            422,
+            'Services can only be added to an active reservation.',
+        );
+
+        $service = Service::where('active', true)->findOrFail($data['service_id']);
+        $totalNights = $booking->check_in->diffInDays($booking->check_out);
+
+        [$quantity, $nights] = $service->pricing_type === ServicePricingType::PerNight
+            ? [1, min($data['nights'] ?? $totalNights, $totalNights)]
+            : [$data['quantity'] ?? 1, null];
+
+        $servicePurchase->purchase($booking, $service, $quantity, $nights, auth()->id());
+
+        return back()->with('success', "{$service->name} added.");
     }
 
     public function verifyPayment(Booking $booking): RedirectResponse

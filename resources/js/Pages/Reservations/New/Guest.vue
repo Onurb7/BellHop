@@ -2,15 +2,17 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import ServiceSelectCards from '../../../Components/ServiceSelectCards.vue';
 import { useDateFormat } from '../../../Composables/useDateFormat.js';
-import { useMoney } from '../../../Composables/useMoney.js';
+import { useMoney, convertCents } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
+    services: Array,
 });
 
 const { formatDate } = useDateFormat();
-const { money } = useMoney();
+const { money, rates } = useMoney();
 
 const form = useForm({
     first_name: '',
@@ -18,6 +20,29 @@ const form = useForm({
     email: '',
     phone: '',
     address: '',
+    services: [],
+});
+
+// The room charge is still in the room type's own currency at this point
+// (conversion to USD only happens once storeGuest() creates the real
+// charge row) and each service carries its own currency too — pivot
+// everything through USD before summing so mixed currencies add up
+// correctly, then let money() convert the USD sum to the viewer's
+// preferred display currency.
+const totalCents = computed(() => {
+    const roomUsdCents = convertCents(props.booking.total_cents, props.booking.currency, 'USD', rates.value);
+
+    const servicesUsdCents = props.services
+        .filter((service) => form.services.includes(service.id))
+        .reduce((sum, service) => {
+            const cents = service.pricing_type === 'per_night'
+                ? service.unit_price_cents * props.booking.nights
+                : service.unit_price_cents;
+
+            return sum + convertCents(cents, service.currency, 'USD', rates.value);
+        }, 0);
+
+    return roomUsdCents + servicesUsdCents;
 });
 
 const secondsLeft = ref(Math.max(0, Math.floor((new Date(props.booking.expires_at) - new Date()) / 1000)));
@@ -106,6 +131,13 @@ function cancel() {
                             <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
                         </div>
 
+                        <div v-if="services.length" class="sm:col-span-2">
+                            <label class="block text-xs uppercase tracking-wide opacity-50">Add for the whole stay (optional)</label>
+                            <div class="mt-2">
+                                <ServiceSelectCards v-model="form.services" :services="services" :nights="booking.nights" />
+                            </div>
+                        </div>
+
                         <div class="sm:col-span-2">
                             <button
                                 type="submit"
@@ -139,12 +171,15 @@ function cancel() {
                         </div>
                         <div class="flex justify-between border-t border-black/10 pt-2 font-medium">
                             <dt>Total</dt>
-                            <dd>{{ money(booking.total_cents, booking.currency) }}</dd>
+                            <dd>{{ money(totalCents, 'USD') }}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="opacity-60">Deposit due (30%)</dt>
+                            <dt class="opacity-60">Deposit due (30% of room)</dt>
                             <dd>{{ money(booking.deposit_cents, booking.currency) }}</dd>
                         </div>
+                        <p v-if="form.services.length" class="text-xs opacity-50">
+                            Selected services are billed post checkout and are not part of today's payment.
+                        </p>
                     </dl>
                 </div>
             </div>

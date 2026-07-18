@@ -73,6 +73,11 @@ class Booking extends Model implements HasMedia
         return $this->hasMany(BookingPayment::class);
     }
 
+    public function services(): HasMany
+    {
+        return $this->hasMany(BookingService::class);
+    }
+
     /**
      * Derived from the charge ledger, not stored — the total can never
      * drift out of sync with the itemized history this way.

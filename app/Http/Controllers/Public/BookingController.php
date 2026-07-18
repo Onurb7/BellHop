@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Public;
 
 use App\Enums\BookingChargeCategory;
 use App\Enums\BookingStatus;
+use App\Enums\ServicePricingType;
 use App\Exceptions\RoomUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Guest;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
+use App\Services\ServicePurchaseService;
 use App\Services\StripePaymentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -83,6 +86,14 @@ class BookingController extends Controller
                         'room_type' => $booking->room->roomType->name,
                     ],
                 ],
+                'services' => Service::where('active', true)->orderBy('name')->get()->map(fn (Service $service) => [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'unit_price_cents' => $service->unit_price_cents,
+                    'currency' => $service->currency,
+                    'pricing_type' => $service->pricing_type->value,
+                    'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
+                ]),
             ]);
         }
 
@@ -112,7 +123,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, ServicePurchaseService $servicePurchase): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('rooms.index')
@@ -125,6 +136,8 @@ class BookingController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'services' => ['array'],
+            'services.*' => ['integer', 'exists:services,id'],
         ]);
 
         $guest = $this->resolveGuest($data);
@@ -166,6 +179,21 @@ class BookingController extends Controller
                 'amount_cents' => $roomChargeCents,
             ]);
         });
+
+        // Deliberately outside the transaction above and after it commits —
+        // each selected service is applied via the same shared purchase
+        // logic post-booking purchases use, one row at a time.
+        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
+
+        foreach ($selectedServices as $service) {
+            $servicePurchase->purchase(
+                $booking,
+                $service,
+                1,
+                $service->pricing_type === ServicePricingType::PerNight ? $nights : null,
+                auth()->id(),
+            );
+        }
 
         return redirect()->route('booking.show', $booking);
     }
