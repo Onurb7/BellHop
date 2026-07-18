@@ -19,7 +19,7 @@ use Illuminate\Database\QueryException;
 class RoomAvailabilityService
 {
     /**
-     * @return array<int, array{room_id: int, room_number: string, floor: string, room_type_id: int, room_type_name: string, max_occupancy: int, nightly_rate_cents: int, total_cents: int}>
+     * @return array<int, array{room_id: int, room_number: string, floor: string, room_type_id: int, room_type_name: string, max_occupancy: int, nightly_rate_cents: int, total_cents: int, currency: string}>
      */
     public function searchAvailableRooms(Carbon $checkIn, Carbon $checkOut, ?int $guests = null): array
     {
@@ -49,6 +49,7 @@ class RoomAvailabilityService
                 'max_occupancy' => $room->roomType->max_occupancy,
                 'nightly_rate_cents' => $room->roomType->base_rate_cents,
                 'total_cents' => $nights * $room->roomType->base_rate_cents,
+                'currency' => $room->roomType->currency,
             ];
         }
 

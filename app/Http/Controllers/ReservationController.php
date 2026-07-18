@@ -13,6 +13,7 @@ use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\Room;
+use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -140,6 +141,10 @@ class ReservationController extends Controller
                 'nights' => $nights,
                 'total_cents' => $roomChargeCents,
                 'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                // Not yet converted to USD — that only happens once a
+                // real charge row is created in storeGuest(). This is
+                // still just the room type's own listed price.
+                'currency' => $booking->room->roomType->currency,
                 'room' => [
                     'number' => $booking->room->number,
                     'room_type' => $booking->room->roomType->name,
@@ -148,7 +153,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('reservations.new.search')
@@ -175,7 +180,15 @@ class ReservationController extends Controller
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
-        $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+        // Real money always stays USD — the room type's own price gets
+        // converted once, right here, before it ever becomes a permanent
+        // ledger entry.
+        $rateUsdCents = $exchangeRates->convertCents(
+            $booking->room->roomType->base_rate_cents,
+            $booking->room->roomType->currency,
+            'USD',
+        );
+        $roomChargeCents = $nights * $rateUsdCents;
 
         DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights) {
             $booking->update([

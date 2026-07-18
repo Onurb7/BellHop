@@ -21,7 +21,8 @@ class RoomTypeController extends Controller
                     'id' => $roomType->id,
                     'name' => $roomType->name,
                     'slug' => $roomType->slug,
-                    'base_rate' => $roomType->base_rate_cents / 100,
+                    'base_rate_cents' => $roomType->base_rate_cents,
+                    'currency' => $roomType->currency,
                     'max_occupancy' => $roomType->max_occupancy,
                     'rooms_count' => $roomType->rooms_count,
                 ]),
@@ -51,6 +52,7 @@ class RoomTypeController extends Controller
                 'slug' => $roomType->slug,
                 'description' => $roomType->description,
                 'base_rate' => $roomType->base_rate_cents / 100,
+                'currency' => $roomType->currency,
                 'max_occupancy' => $roomType->max_occupancy,
             ],
         ]);

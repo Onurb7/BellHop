@@ -1,10 +1,13 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 defineProps({
     roomTypes: Array,
 });
+
+const { money } = useMoney();
 
 function destroy(roomType) {
     if (confirm(`Delete room type "${roomType.name}"? This can't be undone.`)) {
@@ -43,7 +46,7 @@ function destroy(roomType) {
                 <tbody>
                     <tr v-for="roomType in roomTypes" :key="roomType.id" class="border-b border-black/5 last:border-0">
                         <td class="px-4 py-3 font-medium">{{ roomType.name }}</td>
-                        <td class="px-4 py-3">${{ roomType.base_rate.toFixed(2) }}</td>
+                        <td class="px-4 py-3">{{ money(roomType.base_rate_cents, roomType.currency) }}</td>
                         <td class="px-4 py-3">{{ roomType.max_occupancy }}</td>
                         <td class="px-4 py-3">{{ roomType.rooms_count }}</td>
                         <td class="px-4 py-3 text-right space-x-3 whitespace-nowrap">

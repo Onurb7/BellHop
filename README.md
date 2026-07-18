@@ -90,11 +90,25 @@ instead of repeating that pattern.
   theirs to see.
 - **Per-user preferences and profile management** — every account can set
   its own date format (ISO/US/EU, with a dotted-EU variant), time format,
-  and week-start day, and can update its name, email, and password from a
-  dedicated profile page. Guest accounts additionally manage phone and
-  address there, which stays in sync with their linked `guests` record so
-  front-desk staff and the self-service booking flow below see the same
-  contact details.
+  week-start day, and preferred display currency, and can update its name,
+  email, and password from a dedicated profile page. Guest accounts
+  additionally manage phone and address there, which stays in sync with
+  their linked `guests` record so front-desk staff and the self-service
+  booking flow below see the same contact details.
+- **Multi-currency pricing via a live 3rd-party exchange-rate API** — the
+  admin prices each room type and service in whatever currency makes
+  sense (EUR, GBP, JPY, KRW...), and every price shown anywhere in the
+  app — the public room catalog, staff reservations, the guest dashboard —
+  converts live to the viewer's own preferred currency, using rates
+  fetched from [Frankfurter](https://frankfurter.dev) (free, keyless, ECB
+  reference rates), `Cache`-backed with a daily scheduled refresh so no
+  page load ever blocks on a live API call. Real money never leaves USD,
+  though: a room type's price is converted to USD exactly once, at
+  booking time, before it becomes a permanent ledger entry — Stripe
+  charges and PDF invoices always stay in USD, regardless of what
+  currency the room was priced in or what the guest has since set as
+  their display preference. The Settings page also shows a live
+  USD-relative exchange-rate table for a handful of major currencies.
 - **Real Stripe payments, refunds, and PDF invoicing** — guests pay their
   own deposit/balance via an embedded Stripe Card Element on their own
   reservation page; a webhook handler backed by an idempotency ledger
@@ -161,13 +175,14 @@ instead of repeating that pattern.
   reminder emails run as queued jobs, not inline in the request, so a
   slow mail send or PDF render never blocks the response.
 - **Automated test coverage for the crucial, bug-prone paths** —
-  deliberately not exhaustive: 5 Pest feature tests covering
+  deliberately not exhaustive: Pest feature tests covering
   availability/locking, the charge/payment ledger math, the Stripe
   webhook handler (idempotency, payment confirmation, refund-netting),
-  and the guest-account auto-linking security rule, plus one Vitest test
-  for the only frontend component with real payment-handling logic.
-  Tests run against a real Postgres test database, not SQLite — SQLite
-  can't create the `bookings` table's exclusion constraint at all.
+  the guest-account auto-linking security rule, and the booking-time
+  currency conversion, plus Vitest tests for the payment component and
+  the currency-conversion math. Tests run against a real Postgres test
+  database, not SQLite — SQLite can't create the `bookings` table's
+  exclusion constraint at all.
 
 ## Tech stack
 
@@ -183,6 +198,7 @@ instead of repeating that pattern.
 | PDF generation | barryvdh/laravel-dompdf |
 | Payments | Stripe (`stripe-php`) |
 | Transactional email | Resend |
+| Exchange rates | Frankfurter (free, keyless) |
 | Local/prod parity | Docker Compose (nginx, PHP-FPM, Postgres, Redis, Horizon, scheduler, Mailpit for dev) |
 
 ## Current status
@@ -226,6 +242,8 @@ designed but not yet built:
   above — `checkIn()`/`checkOut()`/`markNoShow()`, expired-hold cleanup,
   no-show sweeps, off-session balance auto-charging, and the monthly
   demo-data reseed, all running on the `scheduler` service
+- Multi-currency pricing and live exchange-rate conversion described
+  above — real money and invoices always stay in USD
 
 **Designed, not yet built** (see the full domain plan for detail — kept
 outside this repo since it's working notes, not a deliverable)

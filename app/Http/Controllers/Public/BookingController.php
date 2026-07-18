@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\User;
+use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
 use App\Services\StripePaymentService;
 use Carbon\Carbon;
@@ -40,7 +41,12 @@ class BookingController extends Controller
                 Carbon::parse($data['check_out']),
             );
         } catch (RoomUnavailableException) {
-            return back()->withErrors(['room_id' => 'That room was just taken — please pick another, or adjust your dates.']);
+            // Deliberately neutral wording: this fires both for a genuine
+            // race (available in a search list moments ago, taken since)
+            // and for dates typed directly on the room page that were
+            // never available — "just taken" implied the latter case too,
+            // which reads as misleading when nobody actually beat you to it.
+            return back()->withErrors(['room_id' => 'This room isn\'t available for the selected dates — please try different dates.']);
         }
 
         return redirect()->route('booking.show', $booking);
@@ -68,6 +74,10 @@ class BookingController extends Controller
                     'nights' => $nights,
                     'total_cents' => $roomChargeCents,
                     'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                    // Not yet converted to USD — that only happens once a
+                    // real charge row is created in storeGuest(). This is
+                    // still just the room type's own listed price.
+                    'currency' => $booking->room->roomType->currency,
                     'room' => [
                         'number' => $booking->room->number,
                         'room_type' => $booking->room->roomType->name,
@@ -102,7 +112,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('rooms.index')
@@ -121,7 +131,16 @@ class BookingController extends Controller
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
-        $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+        // Real money always stays USD — the room type's own price gets
+        // converted once, right here, before it ever becomes a permanent
+        // ledger entry. Everything downstream (deposit, Stripe amounts,
+        // balance math) just works in USD cents from this point on.
+        $rateUsdCents = $exchangeRates->convertCents(
+            $booking->room->roomType->base_rate_cents,
+            $booking->room->roomType->currency,
+            'USD',
+        );
+        $roomChargeCents = $nights * $rateUsdCents;
 
         // A 30% deposit only makes sense if there's still time for the
         // balance to be auto-charged 3 days before check-in — otherwise

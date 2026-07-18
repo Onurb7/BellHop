@@ -3,6 +3,9 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { BedDouble, ImageOff, Users } from '@lucide/vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
+
+const { money } = useMoney();
 
 const props = defineProps({
     check_in: String,
@@ -40,9 +43,6 @@ function search() {
     );
 }
 
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
 </script>
 
 <template>
@@ -126,7 +126,7 @@ function money(cents) {
                                 {{ amenity }}
                             </span>
                         </div>
-                        <p class="mt-4 text-sm font-medium">{{ money(room.base_rate_cents) }} / night</p>
+                        <p class="mt-4 text-sm font-medium">{{ money(room.base_rate_cents, room.currency) }} / night</p>
                     </div>
                 </Link>
             </div>

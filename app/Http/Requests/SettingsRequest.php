@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Currency;
 use App\Enums\DateFormat;
 use App\Enums\TimeFormat;
 use App\Enums\WeekStart;
@@ -21,6 +22,7 @@ class SettingsRequest extends FormRequest
             'date_format' => ['required', new Enum(DateFormat::class)],
             'time_format' => ['required', new Enum(TimeFormat::class)],
             'week_start' => ['required', new Enum(WeekStart::class)],
+            'currency' => ['required', new Enum(Currency::class)],
         ];
     }
 }

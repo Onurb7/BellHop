@@ -13,6 +13,7 @@ const form = useForm({
     name: props.service?.name ?? '',
     description: props.service?.description ?? '',
     unit_price: props.service?.unit_price ?? '',
+    currency: props.service?.currency ?? 'USD',
     pricing_type: props.service?.pricing_type ?? 'per_night',
     active: props.service?.active ?? true,
     images: [],
@@ -76,7 +77,7 @@ function submit() {
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="mb-1 block text-sm font-medium">Unit price (USD)</label>
+                    <label class="mb-1 block text-sm font-medium">Unit price</label>
                     <input
                         v-model="form.unit_price"
                         type="number"
@@ -88,18 +89,36 @@ function submit() {
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium">Pricing</label>
+                    <label class="mb-1 block text-sm font-medium">Currency</label>
                     <select
-                        v-model="form.pricing_type"
+                        v-model="form.currency"
                         class="w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     >
-                        <option value="per_night">Per night</option>
-                        <option value="flat">Flat fee</option>
+                        <option value="USD">USD — US Dollar</option>
+                        <option value="EUR">EUR — Euro</option>
+                        <option value="GBP">GBP — British Pound</option>
+                        <option value="JPY">JPY — Japanese Yen</option>
+                        <option value="KRW">KRW — South Korean Won</option>
+                        <option value="CAD">CAD — Canadian Dollar</option>
+                        <option value="AUD">AUD — Australian Dollar</option>
+                        <option value="CNY">CNY — Chinese Yuan</option>
                     </select>
-                    <p class="mt-1 text-xs opacity-50">
-                        Per night: unit price × number of nights. Flat: charged once regardless of stay length.
-                    </p>
+                    <p v-if="form.errors.currency" class="mt-1 text-sm text-red-600">{{ form.errors.currency }}</p>
                 </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium">Pricing</label>
+                <select
+                    v-model="form.pricing_type"
+                    class="w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                >
+                    <option value="per_night">Per night</option>
+                    <option value="flat">Flat fee</option>
+                </select>
+                <p class="mt-1 text-xs opacity-50">
+                    Per night: unit price × number of nights. Flat: charged once regardless of stay length.
+                </p>
             </div>
 
             <label class="flex items-center gap-2 text-sm">

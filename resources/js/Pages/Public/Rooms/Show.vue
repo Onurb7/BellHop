@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Check, ImageOff, Users } from '@lucide/vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import { useMoney } from '../../../Composables/useMoney.js';
 
 const props = defineProps({
     room: Object,
@@ -24,9 +25,7 @@ const dateError = computed(() => {
 
 const roomError = computed(() => page.props.errors?.room_id);
 
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
+const { money } = useMoney();
 
 function bookNow() {
     if (dateError.value || !checkIn.value || !checkOut.value) {
@@ -90,7 +89,7 @@ function bookNow() {
 
             <div>
                 <div class="sticky top-6 rounded-lg border border-gold-500/20 bg-white p-6">
-                    <p class="font-serif text-2xl">{{ money(room.base_rate_cents) }}<span class="text-sm font-normal opacity-60"> / night</span></p>
+                    <p class="font-serif text-2xl">{{ money(room.base_rate_cents, room.currency) }}<span class="text-sm font-normal opacity-60"> / night</span></p>
 
                     <div class="mt-4 space-y-3">
                         <div>
@@ -119,7 +118,7 @@ function bookNow() {
                             @click="bookNow"
                             class="w-full rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                         >
-                            {{ locking ? 'Checking…' : 'Book this room' }}
+                            {{ locking ? 'Checking…' : 'Check Availability' }}
                         </button>
                         <p class="text-center text-xs opacity-50">A 30% deposit secures your reservation.</p>
                     </div>

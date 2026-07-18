@@ -15,6 +15,7 @@ class RoomType extends Model
         'slug',
         'description',
         'base_rate_cents',
+        'currency',
         'max_occupancy',
     ];
 

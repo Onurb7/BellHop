@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class DemoActivitySeeder
 {
+    public function __construct(private ExchangeRateService $exchangeRates)
+    {
+    }
+
     /**
      * Wipes ALL guests/bookings (their charges/payments cascade via FK)
      * and regenerates a fresh, today-anchored spread — rooms/room types/
@@ -84,7 +88,11 @@ class DemoActivitySeeder
     private function createGuestBooking(Guest $guest, Room $room, Carbon $checkIn, Carbon $checkOut, BookingStatus $status): void
     {
         $nights = $checkIn->diffInDays($checkOut);
-        $roomChargeCents = $nights * $room->roomType->base_rate_cents;
+        // Ledger amounts are always USD — same conversion the real booking
+        // flows apply at storeGuest() time (see Public\BookingController
+        // and ReservationController).
+        $rateUsdCents = $this->exchangeRates->convertCents($room->roomType->base_rate_cents, $room->roomType->currency, 'USD');
+        $roomChargeCents = $nights * $rateUsdCents;
         $depositCents = (int) round($roomChargeCents * 0.3);
 
         $booking = Booking::create([
@@ -148,7 +156,8 @@ class DemoActivitySeeder
             $checkIn = $cursor->copy();
             $checkOut = $checkIn->copy()->addDays(fake()->numberBetween(1, 5));
             $nights = $checkIn->diffInDays($checkOut);
-            $roomChargeCents = $nights * $room->roomType->base_rate_cents;
+            $rateUsdCents = $this->exchangeRates->convertCents($room->roomType->base_rate_cents, $room->roomType->currency, 'USD');
+            $roomChargeCents = $nights * $rateUsdCents;
             $depositCents = (int) round($roomChargeCents * 0.3);
 
             $status = match (true) {

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Currency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Str;
 
 class RoomTypeRequest extends FormRequest
@@ -25,6 +27,7 @@ class RoomTypeRequest extends FormRequest
             ],
             'description' => ['nullable', 'string'],
             'base_rate' => ['required', 'numeric', 'min:0'],
+            'currency' => ['required', new Enum(Currency::class)],
             'max_occupancy' => ['required', 'integer', 'min:1'],
         ];
     }
@@ -38,6 +41,7 @@ class RoomTypeRequest extends FormRequest
             'slug' => ($data['slug'] ?? null) ?: Str::slug($data['name']),
             'description' => $data['description'] ?? null,
             'base_rate_cents' => (int) round($data['base_rate'] * 100),
+            'currency' => $data['currency'],
             'max_occupancy' => $data['max_occupancy'],
         ];
     }

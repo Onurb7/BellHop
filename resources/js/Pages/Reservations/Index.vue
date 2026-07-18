@@ -3,8 +3,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
+import { useMoney } from '../../Composables/useMoney.js';
 
 const { formatDate } = useDateFormat();
+const { money } = useMoney();
 
 const props = defineProps({
     status: String,
@@ -32,10 +34,6 @@ const statusBadgeClass = {
 };
 
 const searchInput = ref(props.search ?? '');
-
-function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
-}
 
 function setStatus(status) {
     router.get(

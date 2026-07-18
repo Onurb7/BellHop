@@ -17,7 +17,8 @@ class ServiceController extends Controller
             'services' => Service::orderBy('name')->get()->map(fn (Service $service) => [
                 'id' => $service->id,
                 'name' => $service->name,
-                'unit_price' => $service->unit_price_cents / 100,
+                'unit_price_cents' => $service->unit_price_cents,
+                'currency' => $service->currency,
                 'pricing_type' => $service->pricing_type->value,
                 'active' => $service->active,
                 'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
@@ -49,6 +50,7 @@ class ServiceController extends Controller
                 'name' => $service->name,
                 'description' => $service->description,
                 'unit_price' => $service->unit_price_cents / 100,
+                'currency' => $service->currency,
                 'pricing_type' => $service->pricing_type->value,
                 'active' => $service->active,
                 'images' => $service->getMedia('images')->map(fn ($media) => [

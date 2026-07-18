@@ -6,12 +6,14 @@ import { FileText } from '@lucide/vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ConfirmTypedDialog from '../../Components/ConfirmTypedDialog.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
+import { useMoney } from '../../Composables/useMoney.js';
 
 const props = defineProps({
     booking: Object,
 });
 
 const { formatDate, formatDateTime } = useDateFormat();
+const { money } = useMoney();
 
 const statusLabels = {
     pending_payment: 'Pending Payment',
@@ -45,11 +47,6 @@ const paymentKindLabels = {
     refund: 'Refund',
 };
 
-function money(cents) {
-    const negative = cents < 0;
-    const amount = `$${(Math.abs(cents) / 100).toFixed(2)}`;
-    return negative ? `-${amount}` : amount;
-}
 
 const canCancel = computed(() => ['pending_payment', 'confirmed'].includes(props.booking.status));
 const canCheckIn = computed(() => props.booking.status === 'confirmed');

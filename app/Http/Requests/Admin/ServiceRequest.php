@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Currency;
 use App\Enums\ServicePricingType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -27,6 +28,7 @@ class ServiceRequest extends FormRequest
             ],
             'description' => ['nullable', 'string'],
             'unit_price' => ['required', 'numeric', 'min:0'],
+            'currency' => ['required', new Enum(Currency::class)],
             'pricing_type' => ['required', new Enum(ServicePricingType::class)],
             'active' => ['boolean'],
             'images' => ['array'],
@@ -45,6 +47,7 @@ class ServiceRequest extends FormRequest
             'slug' => ($data['slug'] ?? null) ?: Str::slug($data['name']),
             'description' => $data['description'] ?? null,
             'unit_price_cents' => (int) round($data['unit_price'] * 100),
+            'currency' => $data['currency'],
             'pricing_type' => $data['pricing_type'],
             'active' => $data['active'] ?? true,
         ];
