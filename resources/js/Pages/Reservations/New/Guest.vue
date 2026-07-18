@@ -49,8 +49,22 @@ const secondsLeft = ref(Math.max(0, Math.floor((new Date(props.booking.expires_a
 let timer = null;
 
 onMounted(() => {
+    // The hold has already expired server-side too (see
+    // RoomAvailabilityService::lock()'s 15-minute window) — abandon it and
+    // send staff back to search rather than leaving them on a page where
+    // every action would just fail against an expired booking.
+    if (secondsLeft.value <= 0) {
+        cancel();
+        return;
+    }
+
     timer = setInterval(() => {
         secondsLeft.value = Math.max(0, secondsLeft.value - 1);
+
+        if (secondsLeft.value <= 0) {
+            clearInterval(timer);
+            cancel();
+        }
     }, 1000);
 });
 
@@ -155,6 +169,10 @@ function cancel() {
                 <div class="rounded-lg border border-gold-500/20 bg-white p-6">
                     <p class="text-xs uppercase tracking-wide opacity-50">Room held for</p>
                     <p class="mt-1 font-serif text-2xl" :class="secondsLeft < 60 ? 'text-red-600' : ''">{{ countdown }}</p>
+                    <p class="mt-1 text-xs opacity-50">
+                        The room is held for 15 minutes so you have time to complete the guest's details and payment.
+                        If the timer runs out, you'll need to search again.
+                    </p>
 
                     <dl class="mt-4 space-y-2 text-sm">
                         <div class="flex justify-between">

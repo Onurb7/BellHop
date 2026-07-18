@@ -108,6 +108,8 @@ class BookingController extends Controller
         return Inertia::render('Public/Booking/Pay', [
             'booking' => [
                 'id' => $booking->id,
+                'status' => $booking->status->value,
+                'expires_at' => $booking->expires_at?->toIso8601String(),
                 'total_cents' => $booking->totalCents(),
                 'deposit_cents' => $booking->deposit_cents,
                 'balance_due_cents' => $booking->balanceDueCents(),
@@ -237,6 +239,14 @@ class BookingController extends Controller
     {
         if ($booking->guest_id === null) {
             $booking->delete();
+        } elseif ($booking->status === BookingStatus::PendingPayment) {
+            // Once guest details are attached the booking can no longer
+            // just be deleted (real charge/payment rows may already
+            // reference it) — cancel() is what actually releases the
+            // room via the exclusion constraint. Guarded to PendingPayment
+            // only: a booking that has since been confirmed (e.g. the
+            // guest paid in another tab) must never be cancelled here.
+            $booking->cancel();
         }
 
         return redirect()->route('rooms.index');
