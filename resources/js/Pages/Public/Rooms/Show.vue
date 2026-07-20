@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Check, ImageOff, Users } from '@lucide/vue';
 import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import DatePicker from '../../../Components/DatePicker.vue';
 import { useMoney } from '../../../Composables/useMoney.js';
 import { todayDateString } from '../../../Composables/useDateFormat.js';
 
@@ -99,21 +100,11 @@ function bookNow() {
                     <div class="mt-4 space-y-3">
                         <div>
                             <label class="block text-xs uppercase tracking-wide opacity-50">Check-in</label>
-                            <input
-                                v-model="checkIn"
-                                type="date"
-                                :min="todayString"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
+                            <DatePicker v-model="checkIn" :min="todayString" class="mt-1 w-full" />
                         </div>
                         <div>
                             <label class="block text-xs uppercase tracking-wide opacity-50">Check-out</label>
-                            <input
-                                v-model="checkOut"
-                                type="date"
-                                :min="checkIn || todayString"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
+                            <DatePicker v-model="checkOut" :min="checkIn || todayString" class="mt-1 w-full" />
                         </div>
                         <p v-if="dateError" class="text-sm text-red-600">{{ dateError }}</p>
                         <p v-if="roomError" class="text-sm text-red-600">{{ roomError }}</p>

@@ -41,3 +41,7 @@ Schedule::command('demo:reseed-activity')->monthlyOn(1, '01:00');
 // Keeps the exchange-rate cache warm so no page load ever blocks on a live
 // API call — cache TTL is 24h, this runs well inside that window.
 Schedule::command('exchange-rates:refresh')->dailyAt('01:15');
+
+// Recomputes the Easter pricing-rule template's date for the new year —
+// Easter moves every year, unlike Christmas/New Year's/Summer/Winter.
+Schedule::command('pricing:refresh-computed-dates')->yearlyOn(1, 1, '00:30');

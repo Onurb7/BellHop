@@ -18,13 +18,13 @@ use Illuminate\Database\QueryException;
  */
 class RoomAvailabilityService
 {
+    public function __construct(private SeasonalPricingService $pricing) {}
+
     /**
      * @return array<int, array{room_id: int, room_number: string, floor: string, room_type_id: int, room_type_name: string, max_occupancy: int, nightly_rate_cents: int, total_cents: int, currency: string}>
      */
     public function searchAvailableRooms(Carbon $checkIn, Carbon $checkOut, ?int $guests = null): array
     {
-        $nights = $checkIn->diffInDays($checkOut);
-
         $roomsQuery = Room::with('roomType')
             ->where('status', RoomStatus::Active->value)
             ->orderBy('number');
@@ -47,8 +47,11 @@ class RoomAvailabilityService
                 'room_type_id' => $room->room_type_id,
                 'room_type_name' => $room->roomType->name,
                 'max_occupancy' => $room->roomType->max_occupancy,
-                'nightly_rate_cents' => $room->roomType->base_rate_cents,
-                'total_cents' => $nights * $room->roomType->base_rate_cents,
+                // A "starting from" indicator (the check-in night's rate)
+                // now that pricing can vary per night — not something
+                // that multiplies cleanly into total_cents anymore.
+                'nightly_rate_cents' => $this->pricing->nightlyRateCents($room->roomType, $checkIn),
+                'total_cents' => $this->pricing->totalRoomChargeCents($room->roomType, $checkIn, $checkOut),
                 'currency' => $room->roomType->currency,
             ];
         }

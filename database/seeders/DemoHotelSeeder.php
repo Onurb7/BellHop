@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PricingRuleDateKind;
 use App\Enums\ServicePricingType;
 use App\Models\Amenity;
+use App\Models\PricingRule;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Service;
@@ -87,7 +89,38 @@ class DemoHotelSeeder extends Seeder
             }
         }
 
+        $this->seedDemoPricingRules();
+
         $activity->reseedGuestsAndBookings();
+    }
+
+    /**
+     * Activates a few of PricingRuleTemplateSeeder's inactive-by-default
+     * templates and adds one sample manual rule, purely so the seasonal
+     * pricing feature is visible in the deployed demo out of the box —
+     * mirrors why a couple of room types were seeded in non-USD
+     * currencies above. Only ever runs on the very first seed (guarded by
+     * the same Room::exists() check above), same as everything else in
+     * this method — an admin's own tuning on a real deploy is never
+     * touched by a later db:seed re-run.
+     */
+    private function seedDemoPricingRules(): void
+    {
+        PricingRule::whereIn('template_key', ['weekend', 'christmas', 'winter'])
+            ->update(['active' => true]);
+
+        PricingRule::create([
+            'name' => 'Riverside Jazz Festival',
+            'is_template' => false,
+            'date_kind' => PricingRuleDateKind::DateRange,
+            'recurring' => false,
+            'start_date' => now()->addMonths(2)->startOfMonth()->addDays(9),
+            'end_date' => now()->addMonths(2)->startOfMonth()->addDays(11),
+            'percentage' => 15,
+            'ramp_in_days' => 2,
+            'ramp_out_days' => 2,
+            'active' => true,
+        ]);
     }
 
     private function attachRoomImages(Room $room, string $roomTypeSlug): void

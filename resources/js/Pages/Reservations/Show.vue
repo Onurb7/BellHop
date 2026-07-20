@@ -6,6 +6,7 @@ import { FileText } from '@lucide/vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ConfirmTypedDialog from '../../Components/ConfirmTypedDialog.vue';
 import AddServiceForm from '../../Components/AddServiceForm.vue';
+import DatePicker from '../../Components/DatePicker.vue';
 import { useDateFormat } from '../../Composables/useDateFormat.js';
 import { useMoney } from '../../Composables/useMoney.js';
 
@@ -283,19 +284,11 @@ function applyOption(option) {
                     <div v-else class="mt-3 flex flex-wrap items-end gap-3">
                         <div>
                             <label class="block text-xs uppercase tracking-wide opacity-50">Check-in</label>
-                            <input
-                                v-model="newCheckIn"
-                                type="date"
-                                class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
+                            <DatePicker v-model="newCheckIn" class="mt-1" />
                         </div>
                         <div>
                             <label class="block text-xs uppercase tracking-wide opacity-50">Check-out</label>
-                            <input
-                                v-model="newCheckOut"
-                                type="date"
-                                class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
+                            <DatePicker v-model="newCheckOut" class="mt-1" />
                         </div>
                         <button
                             type="button"

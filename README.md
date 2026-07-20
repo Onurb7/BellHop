@@ -96,7 +96,11 @@ instead of repeating that pattern.
   email, and password from a dedicated profile page. Guest accounts
   additionally manage phone and address there, which stays in sync with
   their linked `guests` record so front-desk staff and the self-service
-  booking flow below see the same contact details.
+  booking flow below see the same contact details. These aren't just
+  cosmetic on text — every date picker app-wide is a custom calendar
+  component (not the browser's native `<input type="date">`, which can't
+  be told a preferred format or first day of week) that renders in the
+  viewer's own format and starts its week on their chosen day.
 - **Multi-currency pricing via a live 3rd-party exchange-rate API** — the
   admin prices each room type and service in whatever currency makes
   sense (EUR, GBP, JPY, KRW...), and every price shown anywhere in the
@@ -111,6 +115,22 @@ instead of repeating that pattern.
   currency the room was priced in or what the guest has since set as
   their display preference. The Settings page also shows a live
   USD-relative exchange-rate table for a handful of major currencies.
+- **Seasonal/date-based room pricing** — admin-configurable percentage
+  adjustments to a room type's base rate, off the base rate only (never
+  compounding off an already-adjusted price). Six always-present
+  templates (Weekend, Christmas, Easter, New Year's, Summer, Winter) stack
+  additively with each other; a manual, admin-created rule for an
+  arbitrary date range (recurring or one-off — a local concert, say)
+  overrides every template outright for the dates it covers, with a
+  warning (not a hard block) if it steps on another active rule. Each
+  rule has independently configurable ramp-in/ramp-out day counts so a
+  price change tapers rather than cliffs, e.g. Christmas at +20% might
+  ramp 5%/day for two days on either side — the math is driven by a
+  single `SeasonalPricingService` shared by every price calculation in
+  the app, so the booking preview, the final charge, and the admin's own
+  overlap warning can never drift apart. Easter's date is computed by a
+  yearly scheduled job (the Computus algorithm) rather than hardcoded, in
+  case other computed-annually dates are needed later.
 - **Purchasable services, selected at booking or added anytime after** —
   breakfast, parking, a pet fee, and the rest of the admin-managed catalog
   can be added as full-stay checkboxes right on the booking form (each
@@ -270,6 +290,12 @@ Every piece of domain functionality originally scoped in the domain plan
 (kept outside this repo since it's working notes, not a deliverable) is
 now shipped. I'd rather show a smaller surface area that's actually
 finished and correct than a large one that only looks done.
+
+**On the roadmap** (ideas, not yet designed or scheduled)
+- Promo/discount codes — usage limits, expiry, and validation against the
+  existing charge ledger
+- Guest reviews after checkout — closes the loop on the guest lifecycle
+  and gives the public room catalog something real to display
 
 ## Getting started
 
