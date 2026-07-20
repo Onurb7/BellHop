@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Public\BookingController;
+use App\Http\Controllers\Public\ReviewController;
 use App\Http\Controllers\Public\RoomCatalogController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,9 @@ Route::get('book/{booking}', [BookingController::class, 'show'])->name('booking.
 Route::post('book/{booking}/guest', [BookingController::class, 'storeGuest'])
     ->middleware('throttle:10,1')
     ->name('booking.guest.store');
+Route::post('book/{booking}/promo-code/preview', [BookingController::class, 'previewPromoCode'])
+    ->middleware('throttle:20,1')
+    ->name('booking.promo-code.preview');
 Route::delete('book/{booking}', [BookingController::class, 'abandon'])->name('booking.abandon');
 Route::post('book/{booking}/stripe/intent', [BookingController::class, 'createPaymentIntent'])
     ->middleware('throttle:10,1')
@@ -28,3 +32,10 @@ Route::post('book/{booking}/stripe/intent', [BookingController::class, 'createPa
 Route::get('book/{booking}/confirmation', [BookingController::class, 'confirmation'])
     ->middleware('signed')
     ->name('booking.confirmation');
+
+// No signed/auth middleware — the uuid itself is the access token, same
+// as any other unguessable-link pattern in this app.
+Route::get('review/{review:uuid}', [ReviewController::class, 'show'])->name('reviews.show');
+Route::post('review/{review:uuid}', [ReviewController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('reviews.store');

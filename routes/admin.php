@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\PricingRuleController;
+use App\Http\Controllers\Admin\PromoCodeController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\RoomTypeController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -23,4 +25,12 @@ Route::middleware(['auth', 'role:admin|super-admin'])
         Route::resource('pricing', PricingRuleController::class)
             ->parameters(['pricing' => 'pricingRule'])
             ->except('show');
+
+        Route::resource('promo-codes', PromoCodeController::class)
+            ->parameters(['promo-codes' => 'promoCode'])
+            ->except('show');
+
+        Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+        Route::post('reviews/{review}/toggle-featured', [ReviewController::class, 'toggleFeatured'])->name('reviews.toggle-featured');
+        Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     });

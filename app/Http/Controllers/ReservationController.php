@@ -13,9 +13,11 @@ use App\Mail\PaymentReminderMail;
 use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
 use App\Models\Guest;
+use App\Models\Review;
 use App\Models\Room;
 use App\Models\Service;
 use App\Services\ExchangeRateService;
+use App\Services\PromoCodeService;
 use App\Services\RoomAvailabilityService;
 use App\Services\SeasonalPricingService;
 use App\Services\ServicePurchaseService;
@@ -26,6 +28,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -165,7 +169,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, SeasonalPricingService $pricing, ServicePurchaseService $servicePurchase): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, SeasonalPricingService $pricing, ServicePurchaseService $servicePurchase, PromoCodeService $promoCodes): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('reservations.new.search')
@@ -180,6 +184,7 @@ class ReservationController extends Controller
             'address' => ['nullable', 'string', 'max:1000'],
             'services' => ['array'],
             'services.*' => ['integer', 'exists:services,id'],
+            'promo_code' => ['nullable', 'string', 'max:50'],
         ]);
 
         $guest = Guest::firstOrCreate(
@@ -204,11 +209,26 @@ class ReservationController extends Controller
             'USD',
         );
 
-        DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights) {
+        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
+
+        // Re-validated here regardless of what the Apply-button preview
+        // already showed — this is the only place that ever actually
+        // redeems a code.
+        $promoCode = null;
+        $discountCents = 0;
+        if (! empty($data['promo_code'])) {
+            $promoCode = $promoCodes->resolve($data['promo_code'], $selectedServices->pluck('id')->all());
+            $discountCents = $promoCodes->discountCents($promoCode, $roomChargeCents, $selectedServices, $nights);
+        }
+
+        $roomScopedDiscountCents = ($promoCode && $promoCode->services->isEmpty()) ? $discountCents : 0;
+        $depositCents = (int) round(($roomChargeCents - $roomScopedDiscountCents) * 0.3);
+
+        DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights, $depositCents) {
             $booking->update([
                 'guest_id' => $guest->id,
                 'expires_at' => null,
-                'deposit_cents' => (int) round($roomChargeCents * 0.3),
+                'deposit_cents' => $depositCents,
             ]);
 
             $booking->charges()->create([
@@ -217,8 +237,6 @@ class ReservationController extends Controller
                 'amount_cents' => $roomChargeCents,
             ]);
         });
-
-        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
 
         foreach ($selectedServices as $service) {
             $servicePurchase->purchase(
@@ -230,7 +248,50 @@ class ReservationController extends Controller
             );
         }
 
+        if ($promoCode) {
+            $promoCodes->redeem($promoCode, $booking, $discountCents);
+        }
+
         return redirect()->route('reservations.show', $booking)->with('success', 'Reservation created.');
+    }
+
+    /**
+     * Read-only Apply-button check for the staff walk-in flow — mirrors
+     * Public\BookingController::previewPromoCode() exactly, sharing the
+     * same PromoCodeService so the two flows can never disagree.
+     */
+    public function previewPromoCode(Booking $booking, Request $request, ExchangeRateService $exchangeRates, SeasonalPricingService $pricing, PromoCodeService $promoCodes): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'services' => ['array'],
+            'services.*' => ['integer', 'exists:services,id'],
+        ]);
+
+        $booking->loadMissing('room.roomType');
+        $nights = $booking->check_in->diffInDays($booking->check_out);
+        $roomChargeCents = $exchangeRates->convertCents(
+            $pricing->totalRoomChargeCents($booking->room->roomType, $booking->check_in, $booking->check_out),
+            $booking->room->roomType->currency,
+            'USD',
+        );
+
+        $selectedServices = Service::where('active', true)->whereIn('id', $data['services'] ?? [])->get();
+
+        try {
+            $promoCode = $promoCodes->resolve($data['code'], $selectedServices->pluck('id')->all());
+        } catch (ValidationException $exception) {
+            return response()->json(['valid' => false, 'message' => $exception->validator->errors()->first('promo_code')], 422);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'code' => $promoCode->code,
+            'description' => $promoCode->description,
+            'percentage' => $promoCode->percentage,
+            'discount_cents' => $promoCodes->discountCents($promoCode, $roomChargeCents, $selectedServices, $nights),
+            'service_ids' => $promoCode->services->pluck('id'),
+        ]);
     }
 
     public function abandon(Booking $booking): RedirectResponse
@@ -395,6 +456,14 @@ class ReservationController extends Controller
 
         $booking->loadMissing('guest', 'room.roomType');
         Mail::to($booking->guest->email)->send(new CheckoutThankYouMail($booking));
+
+        // A distinct, later touch from the thank-you above — the daily
+        // reviews:send-followups job emails this 3 days out.
+        Review::create([
+            'booking_id' => $booking->id,
+            'uuid' => Str::uuid(),
+            'send_at' => now()->addDays(3),
+        ]);
 
         return back()->with('success', 'Guest checked out.');
     }

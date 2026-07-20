@@ -42,6 +42,7 @@ const chargeCategoryLabels = {
     date_change: 'Date change',
     room_change: 'Room change',
     refund: 'Refund',
+    discount: 'Promo code',
 };
 
 const canAddServices = ['confirmed', 'checked_in'].includes(props.booking.status);

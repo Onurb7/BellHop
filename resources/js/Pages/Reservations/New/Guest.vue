@@ -1,6 +1,7 @@
 <script setup>
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import axios from 'axios';
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import ServiceSelectCards from '../../../Components/ServiceSelectCards.vue';
 import { useDateFormat } from '../../../Composables/useDateFormat.js';
@@ -21,7 +22,54 @@ const form = useForm({
     phone: '',
     address: '',
     services: [],
+    promo_code: '',
 });
+
+const appliedPromoCode = ref(null);
+const promoCodeError = ref('');
+const applyingPromoCode = ref(false);
+
+async function applyPromoCode() {
+    if (!form.promo_code.trim()) {
+        return;
+    }
+
+    applyingPromoCode.value = true;
+    promoCodeError.value = '';
+
+    try {
+        const response = await axios.post(`/reservations/new/${props.booking.id}/promo-code/preview`, {
+            code: form.promo_code,
+            services: form.services,
+        });
+        appliedPromoCode.value = response.data;
+    } catch (err) {
+        appliedPromoCode.value = null;
+        promoCodeError.value = err.response?.data?.message ?? 'Could not check that code — please try again.';
+    } finally {
+        applyingPromoCode.value = false;
+    }
+}
+
+// Keeps a scoped code's applied state from going stale if a service it
+// applies to gets deselected after Apply already succeeded — an empty
+// service_ids means unscoped (off the room charge), unaffected by
+// service selection.
+watch(
+    () => form.services.slice(),
+    () => {
+        if (!appliedPromoCode.value || appliedPromoCode.value.service_ids.length === 0) {
+            return;
+        }
+
+        const stillSelected = appliedPromoCode.value.service_ids.some((id) => form.services.includes(id));
+
+        if (!stillSelected) {
+            appliedPromoCode.value = null;
+            promoCodeError.value = 'This promo code no longer applies — re-select its service or apply a different code.';
+        }
+    },
+);
 
 // The room charge is still in the room type's own currency at this point
 // (conversion to USD only happens once storeGuest() creates the real
@@ -42,7 +90,9 @@ const totalCents = computed(() => {
             return sum + convertCents(cents, service.currency, 'USD', rates.value);
         }, 0);
 
-    return roomUsdCents + servicesUsdCents;
+    const discountUsdCents = appliedPromoCode.value?.discount_cents ?? 0;
+
+    return roomUsdCents + servicesUsdCents - discountUsdCents;
 });
 
 const secondsLeft = ref(Math.max(0, Math.floor((new Date(props.booking.expires_at) - new Date()) / 1000)));
@@ -150,6 +200,31 @@ function cancel() {
                             <div class="mt-2">
                                 <ServiceSelectCards v-model="form.services" :services="services" :nights="booking.nights" />
                             </div>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs uppercase tracking-wide opacity-50">Promo code (optional)</label>
+                            <div class="mt-1 flex gap-2">
+                                <input
+                                    v-model="form.promo_code"
+                                    type="text"
+                                    placeholder="e.g. SUMMER10"
+                                    class="w-full rounded-md border border-black/10 px-3 py-2 text-sm uppercase focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                    @keydown.enter.prevent="applyPromoCode"
+                                />
+                                <button
+                                    type="button"
+                                    :disabled="applyingPromoCode || !form.promo_code.trim()"
+                                    @click="applyPromoCode"
+                                    class="shrink-0 rounded-md border border-gold-500/30 px-4 py-2 text-sm font-medium text-gold-700 hover:bg-gold-500/10 disabled:opacity-50"
+                                >
+                                    {{ applyingPromoCode ? 'Checking…' : 'Apply' }}
+                                </button>
+                            </div>
+                            <p v-if="appliedPromoCode" class="mt-2 text-sm text-emerald-700">
+                                Code applied — {{ appliedPromoCode.description || `${appliedPromoCode.percentage}% off` }}
+                            </p>
+                            <p v-else-if="promoCodeError" class="mt-2 text-sm text-red-600">{{ promoCodeError }}</p>
                         </div>
 
                         <div class="sm:col-span-2">
