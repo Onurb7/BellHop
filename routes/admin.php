@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AmenityController;
+use App\Http\Controllers\Admin\PricingRuleController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\RoomTypeController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -18,4 +19,8 @@ Route::middleware(['auth', 'role:admin|super-admin'])
         Route::resource('services', ServiceController::class)->except('show');
 
         Route::post('amenities', [AmenityController::class, 'store'])->name('amenities.store');
+
+        Route::resource('pricing', PricingRuleController::class)
+            ->parameters(['pricing' => 'pricingRule'])
+            ->except('show');
     });

@@ -13,6 +13,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
+use App\Services\SeasonalPricingService;
 use App\Services\ServicePurchaseService;
 use App\Services\StripePaymentService;
 use Carbon\Carbon;
@@ -55,7 +56,7 @@ class BookingController extends Controller
         return redirect()->route('booking.show', $booking);
     }
 
-    public function show(Booking $booking, RoomAvailabilityService $availability): RedirectResponse|Response
+    public function show(Booking $booking, RoomAvailabilityService $availability, SeasonalPricingService $pricing): RedirectResponse|Response
     {
         if ($booking->guest_id === null && ! $availability->isLiveDraft($booking)) {
             return redirect()->route('rooms.index')
@@ -66,7 +67,7 @@ class BookingController extends Controller
 
         if ($booking->guest_id === null) {
             $nights = $booking->check_in->diffInDays($booking->check_out);
-            $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+            $roomChargeCents = $pricing->totalRoomChargeCents($booking->room->roomType, $booking->check_in, $booking->check_out);
             // Mirrors storeGuest()'s canOfferDeposit exactly — this is
             // only a preview, but it must match what actually gets
             // charged once guest details are submitted, or the guest
@@ -132,7 +133,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, ServicePurchaseService $servicePurchase): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, SeasonalPricingService $pricing, ServicePurchaseService $servicePurchase): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('rooms.index')
@@ -153,16 +154,19 @@ class BookingController extends Controller
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
-        // Real money always stays USD — the room type's own price gets
-        // converted once, right here, before it ever becomes a permanent
-        // ledger entry. Everything downstream (deposit, Stripe amounts,
-        // balance math) just works in USD cents from this point on.
-        $rateUsdCents = $exchangeRates->convertCents(
-            $booking->room->roomType->base_rate_cents,
+        // Seasonal adjustment happens per night, in the room type's own
+        // currency, then the summed total is converted to USD exactly
+        // once — a stay only ever uses one exchange rate regardless of
+        // night count, same as before per-night pricing existed. Real
+        // money always stays USD from this point on: everything
+        // downstream (deposit, Stripe amounts, balance math) just works
+        // in USD cents.
+        $seasonalTotalCents = $pricing->totalRoomChargeCents($booking->room->roomType, $booking->check_in, $booking->check_out);
+        $roomChargeCents = $exchangeRates->convertCents(
+            $seasonalTotalCents,
             $booking->room->roomType->currency,
             'USD',
         );
-        $roomChargeCents = $nights * $rateUsdCents;
 
         // A 30% deposit only makes sense if there's still time for the
         // balance to be auto-charged 3 days before check-in — otherwise

@@ -12,7 +12,9 @@ const isStaffOrAdmin = computed(() => roleNames.value.some((role) => ['staff', '
 const isDashboardActive = computed(() => page.url.startsWith('/dashboard'));
 const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
 const isReservationsActive = computed(() => page.url.startsWith('/reservations'));
+const isPricingActive = computed(() => page.url.startsWith('/admin/pricing'));
 const flashSuccess = computed(() => page.props.flash?.success);
+const flashWarning = computed(() => page.props.flash?.warning);
 
 const roomsAndServicesItems = [
     { label: 'Room Types', href: '/admin/room-types' },
@@ -64,6 +66,15 @@ function logout() {
                     label="Rooms & Services"
                     :items="roomsAndServicesItems"
                 />
+
+                <Link
+                    v-if="isAdmin"
+                    href="/admin/pricing"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                    :class="isPricingActive ? 'text-gold-700' : 'text-[#1b1b18]'"
+                >
+                    Pricing
+                </Link>
             </nav>
         </aside>
 
@@ -108,6 +119,13 @@ function logout() {
                     class="mb-6 rounded-md border border-gold-500/30 bg-gold-50 px-4 py-2 text-sm text-gold-700"
                 >
                     {{ flashSuccess }}
+                </div>
+
+                <div
+                    v-if="flashWarning"
+                    class="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800"
+                >
+                    {{ flashWarning }}
                 </div>
 
                 <slot />

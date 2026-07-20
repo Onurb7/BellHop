@@ -17,6 +17,7 @@ use App\Models\Room;
 use App\Models\Service;
 use App\Services\ExchangeRateService;
 use App\Services\RoomAvailabilityService;
+use App\Services\SeasonalPricingService;
 use App\Services\ServicePurchaseService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -124,7 +125,7 @@ class ReservationController extends Controller
         return redirect()->route('reservations.new.guest', $booking);
     }
 
-    public function newGuestForm(Booking $booking, RoomAvailabilityService $availability): RedirectResponse|Response
+    public function newGuestForm(Booking $booking, RoomAvailabilityService $availability, SeasonalPricingService $pricing): RedirectResponse|Response
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('reservations.new.search')
@@ -133,7 +134,7 @@ class ReservationController extends Controller
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
-        $roomChargeCents = $nights * $booking->room->roomType->base_rate_cents;
+        $roomChargeCents = $pricing->totalRoomChargeCents($booking->room->roomType, $booking->check_in, $booking->check_out);
 
         return Inertia::render('Reservations/New/Guest', [
             'booking' => [
@@ -164,7 +165,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, ServicePurchaseService $servicePurchase): RedirectResponse
+    public function storeGuest(Booking $booking, Request $request, RoomAvailabilityService $availability, ExchangeRateService $exchangeRates, SeasonalPricingService $pricing, ServicePurchaseService $servicePurchase): RedirectResponse
     {
         if (! $availability->isLiveDraft($booking)) {
             return redirect()->route('reservations.new.search')
@@ -193,15 +194,15 @@ class ReservationController extends Controller
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
-        // Real money always stays USD — the room type's own price gets
-        // converted once, right here, before it ever becomes a permanent
-        // ledger entry.
-        $rateUsdCents = $exchangeRates->convertCents(
-            $booking->room->roomType->base_rate_cents,
+        // Seasonal adjustment happens per night, in the room type's own
+        // currency, then the summed total is converted to USD exactly
+        // once — real money always stays USD from this point on.
+        $seasonalTotalCents = $pricing->totalRoomChargeCents($booking->room->roomType, $booking->check_in, $booking->check_out);
+        $roomChargeCents = $exchangeRates->convertCents(
+            $seasonalTotalCents,
             $booking->room->roomType->currency,
             'USD',
         );
-        $roomChargeCents = $nights * $rateUsdCents;
 
         DB::transaction(function () use ($booking, $guest, $roomChargeCents, $nights) {
             $booking->update([
@@ -426,7 +427,7 @@ class ReservationController extends Controller
         return back()->with('success', 'Payment reminder sent to '.$booking->guest->email.'.');
     }
 
-    public function previewDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability): JsonResponse
+    public function previewDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability, SeasonalPricingService $pricing): JsonResponse
     {
         $data = $request->validate([
             'check_in' => ['required', 'date'],
@@ -442,7 +443,7 @@ class ReservationController extends Controller
         $amountPaidCents = $booking->amountPaidCents();
 
         $sameRoomAvailable = $availability->isAvailable($booking->room_id, $checkIn, $checkOut, $booking->id);
-        $sameRoomTotalCents = $nights * $booking->room->roomType->base_rate_cents;
+        $sameRoomTotalCents = $pricing->totalRoomChargeCents($booking->room->roomType, $checkIn, $checkOut);
 
         $currentRoomOption = [
             'room_id' => $booking->room_id,
@@ -470,7 +471,7 @@ class ReservationController extends Controller
                     continue;
                 }
 
-                $totalCents = $nights * $room->roomType->base_rate_cents;
+                $totalCents = $pricing->totalRoomChargeCents($room->roomType, $checkIn, $checkOut);
 
                 $alternateRooms[] = [
                     'room_id' => $room->id,
@@ -494,7 +495,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function applyDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability): RedirectResponse
+    public function applyDateChange(Booking $booking, Request $request, RoomAvailabilityService $availability, SeasonalPricingService $pricing): RedirectResponse
     {
         if ($booking->payments()->where('kind', BookingPaymentKind::Balance)->exists()) {
             return back()->withErrors(['check_in' => 'Date or room changes are no longer available once the balance has been charged.']);
@@ -508,14 +509,13 @@ class ReservationController extends Controller
 
         $checkIn = Carbon::parse($data['check_in']);
         $checkOut = Carbon::parse($data['check_out']);
-        $nights = $checkIn->diffInDays($checkOut);
         $room = Room::with('roomType')->findOrFail($data['room_id']);
 
         if (! $availability->isAvailable($room->id, $checkIn, $checkOut, $booking->id)) {
             return back()->withErrors(['check_in' => 'That room is no longer available for those dates.']);
         }
 
-        $newTotalCents = $nights * $room->roomType->base_rate_cents;
+        $newTotalCents = $pricing->totalRoomChargeCents($room->roomType, $checkIn, $checkOut);
         $currentTotalCents = $booking->totalCents();
         $amountPaidCents = $booking->amountPaidCents();
 

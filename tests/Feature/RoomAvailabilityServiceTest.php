@@ -8,7 +8,7 @@ use App\Services\RoomAvailabilityService;
 use Carbon\Carbon;
 
 beforeEach(function () {
-    $this->service = new RoomAvailabilityService;
+    $this->service = app(RoomAvailabilityService::class);
 });
 
 it('excludes a room with an overlapping booking from search results', function () {

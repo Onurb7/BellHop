@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class DemoActivitySeeder
 {
-    public function __construct(private ExchangeRateService $exchangeRates)
+    public function __construct(private ExchangeRateService $exchangeRates, private SeasonalPricingService $pricing)
     {
     }
 
@@ -90,9 +90,10 @@ class DemoActivitySeeder
         $nights = $checkIn->diffInDays($checkOut);
         // Ledger amounts are always USD — same conversion the real booking
         // flows apply at storeGuest() time (see Public\BookingController
-        // and ReservationController).
-        $rateUsdCents = $this->exchangeRates->convertCents($room->roomType->base_rate_cents, $room->roomType->currency, 'USD');
-        $roomChargeCents = $nights * $rateUsdCents;
+        // and ReservationController), now on top of the same seasonal
+        // per-night adjustment those flows apply too.
+        $seasonalTotalCents = $this->pricing->totalRoomChargeCents($room->roomType, $checkIn, $checkOut);
+        $roomChargeCents = $this->exchangeRates->convertCents($seasonalTotalCents, $room->roomType->currency, 'USD');
         $depositCents = (int) round($roomChargeCents * 0.3);
 
         $booking = Booking::create([
@@ -156,8 +157,8 @@ class DemoActivitySeeder
             $checkIn = $cursor->copy();
             $checkOut = $checkIn->copy()->addDays(fake()->numberBetween(1, 5));
             $nights = $checkIn->diffInDays($checkOut);
-            $rateUsdCents = $this->exchangeRates->convertCents($room->roomType->base_rate_cents, $room->roomType->currency, 'USD');
-            $roomChargeCents = $nights * $rateUsdCents;
+            $seasonalTotalCents = $this->pricing->totalRoomChargeCents($room->roomType, $checkIn, $checkOut);
+            $roomChargeCents = $this->exchangeRates->convertCents($seasonalTotalCents, $room->roomType->currency, 'USD');
             $depositCents = (int) round($roomChargeCents * 0.3);
 
             $status = match (true) {

@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                'warning' => $request->session()->get('warning'),
             ],
             // Almost always a cache hit (24h TTL + daily pre-warm job), so
             // this adds no real latency to every request. Null if the FX
