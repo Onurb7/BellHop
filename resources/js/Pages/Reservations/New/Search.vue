@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import DatePicker from '../../../Components/DatePicker.vue';
 import { useMoney } from '../../../Composables/useMoney.js';
 import { todayDateString } from '../../../Composables/useDateFormat.js';
 
@@ -74,21 +75,11 @@ const searched = computed(() => props.check_in && props.check_out);
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label class="block text-xs uppercase tracking-wide opacity-50">Check-in</label>
-                    <input
-                        v-model="checkIn"
-                        type="date"
-                        :min="todayString"
-                        class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                    />
+                    <DatePicker v-model="checkIn" :min="todayString" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-xs uppercase tracking-wide opacity-50">Check-out</label>
-                    <input
-                        v-model="checkOut"
-                        type="date"
-                        :min="checkIn || todayString"
-                        class="mt-1 rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                    />
+                    <DatePicker v-model="checkOut" :min="checkIn || todayString" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-xs uppercase tracking-wide opacity-50">Guests</label>
