@@ -214,6 +214,19 @@ instead of repeating that pattern.
   — a declined auto-charge or an ignored reminder — the booking is
   automatically cancelled and the room released for resale, rather than
   sitting blocked all the way through the stay.
+- **Post-checkout review follow-ups, with featured testimonials on the
+  home page** — checking a guest out schedules a review-invitation email
+  3 days later via a real scheduled job, linking to an unguessable
+  `/review/{uuid}` page that needs no login — the token itself is the
+  access control, same philosophy as the existing signed booking-
+  confirmation link. A star rating is required, the written review is
+  optional; a second visit after submitting shows a thank-you state
+  instead of letting the form be resubmitted. Admins browse every
+  submission (sortable by rating, submission date, or featured status,
+  paginated so the list scales) and can mark the best ones Featured,
+  which then rotate as a small animated quote inside the public home
+  page's hero panel — first-name-plus-last-initial only, never the
+  guest's email.
 - **Demo data engineered to stay fresh** — the room/service catalog
   (including real stock photography, seeded via Spatie Media Library) is a
   static, hand-curated set that never changes; guests and bookings alone
@@ -303,10 +316,6 @@ Every piece of domain functionality originally scoped in the domain plan
 (kept outside this repo since it's working notes, not a deliverable) is
 now shipped. I'd rather show a smaller surface area that's actually
 finished and correct than a large one that only looks done.
-
-**On the roadmap** (ideas, not yet designed or scheduled)
-- Guest reviews after checkout — closes the loop on the guest lifecycle
-  and gives the public room catalog something real to display
 
 ## Getting started
 
