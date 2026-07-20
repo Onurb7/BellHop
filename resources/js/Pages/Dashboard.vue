@@ -122,7 +122,15 @@ function setTrendView(view) {
         </div>
 
         <div v-else>
-            <h2 class="mb-6 font-serif text-2xl">Welcome, {{ user?.name }}</h2>
+            <div class="mb-6 flex items-center justify-between gap-4">
+                <h2 class="font-serif text-2xl">Welcome, {{ user?.name }}</h2>
+                <Link
+                    href="/rooms"
+                    class="shrink-0 rounded-md bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2 text-sm font-medium text-white"
+                >
+                    Book a new stay
+                </Link>
+            </div>
 
             <div v-if="reservations">
                 <div class="mb-8">

@@ -10,6 +10,10 @@ import { useMoney, convertCents } from '../../../Composables/useMoney.js';
 const props = defineProps({
     booking: Object,
     services: Array,
+    guestAccount: {
+        type: Object,
+        default: null,
+    },
 });
 
 const { formatDate } = useDateFormat();
@@ -143,55 +147,67 @@ function cancel() {
                 <div class="rounded-lg border border-gold-500/20 bg-white p-6">
                     <button type="button" @click="cancel" class="text-sm text-gold-600 hover:underline">‹ Pick a different room</button>
 
-                    <h1 class="mt-4 font-serif text-2xl">Almost there — your details</h1>
-                    <p class="mt-1 text-sm opacity-60">We'll email you a link to set up your account once your deposit is paid.</p>
+                    <template v-if="guestAccount">
+                        <h1 class="mt-4 font-serif text-2xl">Almost there — review your stay</h1>
+                        <p class="mt-1 text-sm opacity-60">
+                            Booking as
+                            <span class="font-medium text-[#1b1b18]">{{ guestAccount.first_name }} {{ guestAccount.last_name }}</span>
+                            — {{ guestAccount.email }}
+                        </p>
+                    </template>
+                    <template v-else>
+                        <h1 class="mt-4 font-serif text-2xl">Almost there — your details</h1>
+                        <p class="mt-1 text-sm opacity-60">We'll email you a link to set up your account once your deposit is paid.</p>
+                    </template>
 
                     <form class="mt-4 grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
-                        <div>
-                            <label class="block text-xs uppercase tracking-wide opacity-50">First name</label>
-                            <input
-                                v-model="form.first_name"
-                                type="text"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
-                            <p v-if="form.errors.first_name" class="mt-1 text-sm text-red-600">{{ form.errors.first_name }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs uppercase tracking-wide opacity-50">Last name</label>
-                            <input
-                                v-model="form.last_name"
-                                type="text"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
-                            <p v-if="form.errors.last_name" class="mt-1 text-sm text-red-600">{{ form.errors.last_name }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs uppercase tracking-wide opacity-50">Email</label>
-                            <input
-                                v-model="form.email"
-                                type="email"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
-                            <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs uppercase tracking-wide opacity-50">Phone</label>
-                            <input
-                                v-model="form.phone"
-                                type="text"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            />
-                            <p v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</p>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs uppercase tracking-wide opacity-50">Address</label>
-                            <textarea
-                                v-model="form.address"
-                                rows="2"
-                                class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                            ></textarea>
-                            <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
-                        </div>
+                        <template v-if="!guestAccount">
+                            <div>
+                                <label class="block text-xs uppercase tracking-wide opacity-50">First name</label>
+                                <input
+                                    v-model="form.first_name"
+                                    type="text"
+                                    class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                />
+                                <p v-if="form.errors.first_name" class="mt-1 text-sm text-red-600">{{ form.errors.first_name }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-wide opacity-50">Last name</label>
+                                <input
+                                    v-model="form.last_name"
+                                    type="text"
+                                    class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                />
+                                <p v-if="form.errors.last_name" class="mt-1 text-sm text-red-600">{{ form.errors.last_name }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-wide opacity-50">Email</label>
+                                <input
+                                    v-model="form.email"
+                                    type="email"
+                                    class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                />
+                                <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-wide opacity-50">Phone</label>
+                                <input
+                                    v-model="form.phone"
+                                    type="text"
+                                    class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                />
+                                <p v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs uppercase tracking-wide opacity-50">Address</label>
+                                <textarea
+                                    v-model="form.address"
+                                    rows="2"
+                                    class="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                ></textarea>
+                                <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
+                            </div>
+                        </template>
 
                         <div v-if="services.length" class="sm:col-span-2">
                             <label class="block text-xs uppercase tracking-wide opacity-50">Add for your whole stay (optional)</label>

@@ -9,6 +9,7 @@ const user = computed(() => page.props.auth.user);
 const roleNames = computed(() => (user.value?.roles ?? []).map((role) => role.name));
 const isAdmin = computed(() => roleNames.value.some((role) => ['admin', 'super-admin'].includes(role)));
 const isStaffOrAdmin = computed(() => roleNames.value.some((role) => ['staff', 'admin', 'super-admin'].includes(role)));
+const isGuest = computed(() => roleNames.value.includes('guest'));
 const isDashboardActive = computed(() => page.url.startsWith('/dashboard'));
 const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
 const isReservationsActive = computed(() => page.url.startsWith('/reservations'));
@@ -43,6 +44,14 @@ function logout() {
                     :class="isDashboardActive ? 'text-gold-700' : 'text-[#1b1b18]'"
                 >
                     Dashboard
+                </Link>
+
+                <Link
+                    v-if="isGuest"
+                    href="/rooms"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                >
+                    Book a Stay
                 </Link>
 
                 <Link
