@@ -85,11 +85,19 @@ instead of repeating that pattern.
   occupancy trend line toggleable by day/week/month, and average-occupancy
   breakdowns by weekday and day-of-month, all reading from the same
   booking data as the calendar and reservations views.
-- **Guest self-service dashboard** — a signed-in guest sees their own
-  active and past reservations (room, dates, status, balance due/paid)
-  pulled from their linked booking history; a guest with no bookings yet
+- **Guest self-service dashboard, including booking a new stay** — a
+  signed-in guest sees their own active and past reservations (room,
+  dates, status, balance due/paid) pulled from their linked booking
+  history, and can start a brand-new one from the same "Book a new stay"
+  entry point without leaving their account; a guest with no bookings yet
   gets an honest empty state instead of hotel-wide stats that aren't
-  theirs to see.
+  theirs to see. That new booking reuses the same public `/rooms` search
+  and checkout flow an anonymous visitor gets, minus re-typing who they
+  already are — the identity step is replaced with a read-only summary,
+  and the booking always attaches to the guest's own existing account
+  record rather than trusting whatever gets typed, so it can never spin
+  up a second, orphaned guest record or trigger the "an account already
+  exists" email the anonymous flow sends for an unrecognized submission.
 - **Per-user preferences and profile management** — every account can set
   its own date format (ISO/US/EU, with a dotted-EU variant), time format,
   week-start day, and preferred display currency, and can update its name,

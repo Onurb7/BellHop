@@ -77,6 +77,18 @@ class BookingController extends Controller
             // page.
             $canOfferDeposit = now()->addDays(3)->lt($booking->check_in);
 
+            // Present only for an authenticated visitor — lets the guest
+            // details step show a read-only "booking as" summary instead
+            // of asking them to retype who they already are. Falls back to
+            // the User's own name for a guest-role account that's never
+            // completed a stay yet (no linked `guests` row).
+            $user = auth()->user();
+            $guestAccount = $user ? [
+                'first_name' => $user->guest->first_name ?? $user->first_name,
+                'last_name' => $user->guest->last_name ?? $user->last_name,
+                'email' => $user->email,
+            ] : null;
+
             return Inertia::render('Public/Booking/GuestDetails', [
                 'booking' => [
                     'id' => $booking->id,
@@ -104,6 +116,7 @@ class BookingController extends Controller
                     'pricing_type' => $service->pricing_type->value,
                     'thumb_url' => $service->getFirstMediaUrl('images', 'thumb') ?: null,
                 ]),
+                'guest_account' => $guestAccount,
             ]);
         }
 
@@ -142,18 +155,25 @@ class BookingController extends Controller
                 ->with('error', 'That hold has expired or was already completed — please search again.');
         }
 
-        $data = $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'services' => ['array'],
-            'services.*' => ['integer', 'exists:services,id'],
-            'promo_code' => ['nullable', 'string', 'max:50'],
-        ]);
+        // An authenticated visitor's identity comes from the session, not
+        // whatever they might type — so these fields aren't even collected
+        // (or required) on that path. See resolveAuthenticatedGuest().
+        $data = $request->validate(array_merge(
+            auth()->check() ? [] : [
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:255'],
+                'address' => ['nullable', 'string', 'max:1000'],
+            ],
+            [
+                'services' => ['array'],
+                'services.*' => ['integer', 'exists:services,id'],
+                'promo_code' => ['nullable', 'string', 'max:50'],
+            ],
+        ));
 
-        $guest = $this->resolveGuest($data);
+        $guest = auth()->check() ? $this->resolveAuthenticatedGuest(auth()->user()) : $this->resolveGuest($data);
 
         $booking->loadMissing('room.roomType');
         $nights = $booking->check_in->diffInDays($booking->check_out);
@@ -312,6 +332,25 @@ class BookingController extends Controller
             'last_name' => $data['last_name'],
             'phone' => $data['phone'] ?? null,
             'address' => $data['address'] ?? null,
+        ]);
+    }
+
+    /**
+     * The authenticated equivalent of resolveGuest() — trusts the session,
+     * not typed input, so it always reuses (or creates and links) this
+     * user's own `guests` row rather than ever branching on an email the
+     * request could lie about. A guest-role account with no prior stay has
+     * no linked row yet, so one is created and linked immediately here —
+     * StripeWebhookController::provisionGuestAccount() later sees
+     * `user_id` already set and no-ops, same as any other returning guest.
+     */
+    private function resolveAuthenticatedGuest(User $user): Guest
+    {
+        return $user->guest ?? Guest::create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
         ]);
     }
 
