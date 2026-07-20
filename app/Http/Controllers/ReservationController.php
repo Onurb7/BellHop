@@ -13,6 +13,7 @@ use App\Mail\PaymentReminderMail;
 use App\Mail\ReservationReminderMail;
 use App\Models\Booking;
 use App\Models\Guest;
+use App\Models\Review;
 use App\Models\Room;
 use App\Models\Service;
 use App\Services\ExchangeRateService;
@@ -27,6 +28,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -454,6 +456,14 @@ class ReservationController extends Controller
 
         $booking->loadMissing('guest', 'room.roomType');
         Mail::to($booking->guest->email)->send(new CheckoutThankYouMail($booking));
+
+        // A distinct, later touch from the thank-you above — the daily
+        // reviews:send-followups job emails this 3 days out.
+        Review::create([
+            'booking_id' => $booking->id,
+            'uuid' => Str::uuid(),
+            'send_at' => now()->addDays(3),
+        ]);
 
         return back()->with('success', 'Guest checked out.');
     }

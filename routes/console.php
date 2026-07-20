@@ -45,3 +45,9 @@ Schedule::command('exchange-rates:refresh')->dailyAt('01:15');
 // Recomputes the Easter pricing-rule template's date for the new year —
 // Easter moves every year, unlike Christmas/New Year's/Summer/Winter.
 Schedule::command('pricing:refresh-computed-dates')->yearlyOn(1, 1, '00:30');
+
+// Review rows are created at checkout (see ReservationController::checkOut())
+// with a send_at 3 days out — this just emails whichever ones have come due.
+// A real morning send time since it's guest-facing, same reasoning as
+// bookings:remind-checked-out-balances above.
+Schedule::command('reviews:send-followups')->dailyAt('09:00');

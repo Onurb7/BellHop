@@ -14,6 +14,7 @@ const isCalendarActive = computed(() => page.url.startsWith('/calendar'));
 const isReservationsActive = computed(() => page.url.startsWith('/reservations'));
 const isPricingActive = computed(() => page.url.startsWith('/admin/pricing'));
 const isPromoCodesActive = computed(() => page.url.startsWith('/admin/promo-codes'));
+const isReviewsActive = computed(() => page.url.startsWith('/admin/reviews'));
 const flashSuccess = computed(() => page.props.flash?.success);
 const flashWarning = computed(() => page.props.flash?.warning);
 
@@ -84,6 +85,15 @@ function logout() {
                     :class="isPromoCodesActive ? 'text-gold-700' : 'text-[#1b1b18]'"
                 >
                     Promo Codes
+                </Link>
+
+                <Link
+                    v-if="isAdmin"
+                    href="/admin/reviews"
+                    class="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gold-500/10"
+                    :class="isReviewsActive ? 'text-gold-700' : 'text-[#1b1b18]'"
+                >
+                    Reviews
                 </Link>
             </nav>
         </aside>

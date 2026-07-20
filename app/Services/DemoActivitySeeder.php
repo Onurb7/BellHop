@@ -7,10 +7,12 @@ use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\Guest;
+use App\Models\Review;
 use App\Models\Room;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DemoActivitySeeder
 {
@@ -128,6 +130,8 @@ class DemoActivitySeeder
                 'verified_at' => $checkOut->copy(),
             ]);
         }
+
+        $this->maybeSeedReview($booking);
     }
 
     /**
@@ -205,7 +209,56 @@ class DemoActivitySeeder
                 }
             }
 
+            $this->maybeSeedReview($booking);
+
             $cursor = $checkOut->copy();
         }
+    }
+
+    /**
+     * Gives a portion of checked-out demo bookings a submitted review
+     * (a third of those featured) so the home page's testimonial
+     * rotator has real content out of the box, same reasoning as the
+     * non-USD demo room types and the sample manual pricing rule. Only
+     * bookings checked out at least 3 days ago are eligible, so the
+     * seeded send_at/sent_at/submitted_at timeline never lands in the
+     * future.
+     */
+    private function maybeSeedReview(Booking $booking): void
+    {
+        if ($booking->status !== BookingStatus::CheckedOut || $booking->check_out->diffInDays(now()) < 3) {
+            return;
+        }
+
+        if (! fake()->boolean(40)) {
+            return;
+        }
+
+        $samples = [
+            ['rating' => 5, 'body' => 'Wonderful stay, the room was spotless and the staff went above and beyond.'],
+            ['rating' => 5, 'body' => 'Loved every minute of it — we will definitely be back.'],
+            ['rating' => 4, 'body' => 'Great location and a comfortable room, breakfast could use a bit more variety.'],
+            ['rating' => 4, 'body' => 'Really enjoyed our stay — check-in was smooth and the bed was so comfortable.'],
+            ['rating' => 3, 'body' => 'Decent stay overall, a little noisy at night but otherwise fine.'],
+            ['rating' => 5, 'body' => null],
+        ];
+        $sample = fake()->randomElement($samples);
+
+        $sendAt = $booking->check_out->copy()->addDays(3);
+        $submittedAt = $sendAt->copy()->addDays(fake()->numberBetween(0, 4));
+        if ($submittedAt->isFuture()) {
+            $submittedAt = now();
+        }
+
+        Review::create([
+            'booking_id' => $booking->id,
+            'uuid' => Str::uuid(),
+            'send_at' => $sendAt,
+            'sent_at' => $sendAt,
+            'rating' => $sample['rating'],
+            'body' => $sample['body'],
+            'submitted_at' => $submittedAt,
+            'featured' => $sample['body'] !== null && fake()->boolean(33),
+        ]);
     }
 }

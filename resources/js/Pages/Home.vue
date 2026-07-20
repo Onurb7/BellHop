@@ -1,9 +1,11 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import HeroPhoto from '../Components/HeroPhoto.vue';
+import TestimonialRotator from '../Components/TestimonialRotator.vue';
 
 defineProps({
     message: String,
+    featuredReviews: Array,
 });
 </script>
 
@@ -21,6 +23,8 @@ defineProps({
                 <p class="text-xs uppercase tracking-[0.35em] text-gold-600">Est. Boutique Hospitality</p>
                 <h1 class="mt-4 font-serif text-4xl sm:text-5xl">🛎️ Bellhop</h1>
                 <p class="mt-4 text-sm opacity-70">{{ message }}</p>
+
+                <TestimonialRotator v-if="featuredReviews.length" :reviews="featuredReviews" class="mt-6" />
 
                 <div class="mt-8 flex flex-col gap-3">
                     <Link

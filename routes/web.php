@@ -3,12 +3,26 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestReservationController;
 use App\Http\Controllers\InvoiceController;
+use App\Models\Review;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Home', [
         'message' => 'New here? Book your stay. Already a guest? Enter the lobby.',
+        // Only public-safe fields — never the guest's email, and only a
+        // first-name + last-initial, never the full name.
+        'featuredReviews' => Review::where('featured', true)
+            ->whereNotNull('submitted_at')
+            ->with('booking.guest')
+            ->latest('submitted_at')
+            ->limit(6)
+            ->get()
+            ->map(fn (Review $review) => [
+                'rating' => $review->rating,
+                'body' => $review->body,
+                'guest_name' => trim($review->booking->guest->first_name.' '.mb_substr($review->booking->guest->last_name, 0, 1).'.'),
+            ]),
     ]);
 });
 
