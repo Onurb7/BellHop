@@ -18,6 +18,9 @@ Route::get('book/{booking}', [BookingController::class, 'show'])->name('booking.
 Route::post('book/{booking}/guest', [BookingController::class, 'storeGuest'])
     ->middleware('throttle:10,1')
     ->name('booking.guest.store');
+Route::post('book/{booking}/promo-code/preview', [BookingController::class, 'previewPromoCode'])
+    ->middleware('throttle:20,1')
+    ->name('booking.promo-code.preview');
 Route::delete('book/{booking}', [BookingController::class, 'abandon'])->name('booking.abandon');
 Route::post('book/{booking}/stripe/intent', [BookingController::class, 'createPaymentIntent'])
     ->middleware('throttle:10,1')

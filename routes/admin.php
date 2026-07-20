@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AmenityController;
 use App\Http\Controllers\Admin\PricingRuleController;
+use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\RoomTypeController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -22,5 +23,9 @@ Route::middleware(['auth', 'role:admin|super-admin'])
 
         Route::resource('pricing', PricingRuleController::class)
             ->parameters(['pricing' => 'pricingRule'])
+            ->except('show');
+
+        Route::resource('promo-codes', PromoCodeController::class)
+            ->parameters(['promo-codes' => 'promoCode'])
             ->except('show');
     });

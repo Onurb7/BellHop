@@ -17,6 +17,7 @@ Route::middleware(['auth', 'role:staff|admin|super-admin'])
             Route::post('/new/lock', [ReservationController::class, 'lock'])->name('new.lock');
             Route::get('/new/{booking}/guest', [ReservationController::class, 'newGuestForm'])->name('new.guest');
             Route::post('/new/{booking}/guest', [ReservationController::class, 'storeGuest'])->name('new.guest.store');
+            Route::post('/new/{booking}/promo-code/preview', [ReservationController::class, 'previewPromoCode'])->name('new.promo-code.preview');
             Route::delete('/new/{booking}', [ReservationController::class, 'abandon'])->name('new.abandon');
 
             Route::get('/', [ReservationController::class, 'index'])->name('index');

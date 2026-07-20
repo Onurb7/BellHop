@@ -30,9 +30,7 @@ class ServicePurchaseService
             'USD',
         );
 
-        $lineTotalCents = $service->pricing_type === ServicePricingType::PerNight
-            ? $unitPriceUsdCents * $nights * $quantity
-            : $unitPriceUsdCents * $quantity;
+        $lineTotalCents = $this->lineTotalCents($service, $quantity, $nights);
 
         return DB::transaction(function () use ($booking, $service, $quantity, $nights, $unitPriceUsdCents, $lineTotalCents, $addedByUserId) {
             $booking->services()->create([
@@ -54,5 +52,25 @@ class ServicePurchaseService
                 'amount_cents' => $lineTotalCents,
             ]);
         });
+    }
+
+    /**
+     * The USD line total a service would cost for a given quantity/nights
+     * — split out of purchase() so callers that need the figure without
+     * actually purchasing (e.g. PromoCodeService's discount math) share
+     * the exact same currency-conversion + per-night logic rather than a
+     * second copy that could drift.
+     */
+    public function lineTotalCents(Service $service, int $quantity, ?int $nights): int
+    {
+        $unitPriceUsdCents = $this->exchangeRates->convertCents(
+            $service->unit_price_cents,
+            $service->currency,
+            'USD',
+        );
+
+        return $service->pricing_type === ServicePricingType::PerNight
+            ? $unitPriceUsdCents * $nights * $quantity
+            : $unitPriceUsdCents * $quantity;
     }
 }
