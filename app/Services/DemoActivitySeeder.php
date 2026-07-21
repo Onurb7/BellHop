@@ -16,9 +16,7 @@ use Illuminate\Support\Str;
 
 class DemoActivitySeeder
 {
-    public function __construct(private ExchangeRateService $exchangeRates, private SeasonalPricingService $pricing)
-    {
-    }
+    public function __construct(private ExchangeRateService $exchangeRates, private SeasonalPricingService $pricing) {}
 
     /**
      * Wipes ALL guests/bookings (their charges/payments cascade via FK)

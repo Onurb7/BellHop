@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Stripe\Exception\SignatureVerificationException;
+use Stripe\PaymentIntent;
+use Stripe\Refund;
 use Stripe\Webhook;
 use UnexpectedValueException;
 
@@ -59,7 +61,7 @@ class StripeWebhookController extends Controller
         return response('OK', 200);
     }
 
-    private function handlePaymentSucceeded(\Stripe\PaymentIntent $intent, StripePaymentService $stripe): void
+    private function handlePaymentSucceeded(PaymentIntent $intent, StripePaymentService $stripe): void
     {
         $bookingId = $intent->metadata['booking_id'] ?? null;
         $kind = $intent->metadata['kind'] ?? null;
@@ -116,7 +118,7 @@ class StripeWebhookController extends Controller
      * bookings:charge-due-balances falls back to emailing a payment
      * reminder instead of auto-charging.
      */
-    private function scheduleBalanceCollection(Booking $booking, \Stripe\PaymentIntent $intent, StripePaymentService $stripe): void
+    private function scheduleBalanceCollection(Booking $booking, PaymentIntent $intent, StripePaymentService $stripe): void
     {
         $booking->refresh();
 
@@ -188,7 +190,7 @@ class StripeWebhookController extends Controller
      * the refund has actually settled, and is guarded against a
      * theoretical double-fire on the same terminal status.
      */
-    private function handleRefundUpdated(\Stripe\Refund $refund): void
+    private function handleRefundUpdated(Refund $refund): void
     {
         if ($refund->status !== 'succeeded') {
             return;

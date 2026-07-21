@@ -429,7 +429,7 @@ class ReservationController extends Controller
             $booking->confirm();
         }
 
-        return back()->with('success', ucfirst($kind->value)." payment of $".number_format($amount / 100, 2).' verified.');
+        return back()->with('success', ucfirst($kind->value).' payment of $'.number_format($amount / 100, 2).' verified.');
     }
 
     public function cancel(Booking $booking, Request $request): RedirectResponse

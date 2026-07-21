@@ -2,15 +2,17 @@
 
 use App\Models\Booking;
 use App\Models\Review;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Role;
 
 /**
  * Scrapes the embedded Inertia `data-page` JSON blob, same helper
  * established in BookingDepositPlanTest.php.
  */
-function reviewAdminInertiaProps(\Illuminate\Testing\TestResponse $response): array
+function reviewAdminInertiaProps(TestResponse $response): array
 {
     preg_match('#<script data-page="app" type="application/json">(.*?)</script>#s', $response->getContent(), $matches);
 
@@ -101,9 +103,9 @@ it('paginates the admin reviews list at 15 per page', function () {
     // throwaway Booking (and a fresh Room/RoomType with it) even when
     // booking_id is overridden — 20 of those would exhaust Faker's
     // unique() pool for room type names.
-    $room = \App\Models\Room::factory()->create();
+    $room = Room::factory()->create();
     collect(range(0, 19))->each(fn ($i) => Review::create([
-        'booking_id' => \App\Models\Booking::factory()->create([
+        'booking_id' => Booking::factory()->create([
             'room_id' => $room->id,
             'check_in' => now()->addDays($i * 3),
             'check_out' => now()->addDays($i * 3 + 2),

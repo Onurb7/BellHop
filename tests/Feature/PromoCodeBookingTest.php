@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ServicePricingType;
+use App\Models\Booking;
 use App\Models\PromoCode;
 use App\Models\Room;
 use App\Models\RoomType;
@@ -9,7 +10,7 @@ use App\Models\User;
 use App\Services\RoomAvailabilityService;
 use Spatie\Permission\Models\Role;
 
-function lockRoom(int $roomTypeCents = 10000, int $daysOut = 10, int $nights = 1): \App\Models\Booking
+function lockRoom(int $roomTypeCents = 10000, int $daysOut = 10, int $nights = 1): Booking
 {
     $roomType = RoomType::factory()->create(['base_rate_cents' => $roomTypeCents, 'currency' => 'USD']);
     $room = Room::factory()->create(['room_type_id' => $roomType->id]);

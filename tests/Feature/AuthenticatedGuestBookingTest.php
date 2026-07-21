@@ -1,18 +1,20 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Mail\ExistingAccountMail;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Role;
 
 /**
  * Same `data-page` scraping helper as BookingDepositPlanTest.php — each
  * Pest file can safely redeclare it, confirmed elsewhere in this suite.
  */
-function inertiaPropsForAuthGuest(\Illuminate\Testing\TestResponse $response): array
+function inertiaPropsForAuthGuest(TestResponse $response): array
 {
     preg_match('#<script data-page="app" type="application/json">(.*?)</script>#s', $response->getContent(), $matches);
 
@@ -153,7 +155,7 @@ it('never emails an existing-account notice or disturbs the session when an alre
 
     payDepositForAuthGuest($booking, 'pi_authenticated_guest');
 
-    Mail::assertNotSent(\App\Mail\ExistingAccountMail::class);
+    Mail::assertNotSent(ExistingAccountMail::class);
 
     $confirmationUrl = URL::temporarySignedRoute('booking.confirmation', now()->addHours(2), ['booking' => $booking]);
     $this->actingAs($user)->get($confirmationUrl);

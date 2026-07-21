@@ -15,9 +15,7 @@ class GenerateBookingInvoice implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, SerializesModels;
 
-    public function __construct(public Booking $booking)
-    {
-    }
+    public function __construct(public Booking $booking) {}
 
     /**
      * Also re-dispatched when a refund lands on an already-invoiced

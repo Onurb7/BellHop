@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\PromoCode;
 use App\Models\Service;
 use App\Models\User;
@@ -77,7 +78,7 @@ it('syncs scoped services on update', function () {
 it('refuses to delete a code that already has redemptions', function () {
     $admin = actingAsPromoAdmin();
     $promoCode = PromoCode::create(['code' => 'USED', 'percentage' => 10]);
-    $booking = \App\Models\Booking::factory()->create();
+    $booking = Booking::factory()->create();
     $promoCode->redemptions()->create(['booking_id' => $booking->id, 'discount_cents' => 1000]);
 
     $this->actingAs($admin)->delete("/admin/promo-codes/{$promoCode->id}")->assertStatus(422);
@@ -88,7 +89,7 @@ it('refuses to delete a code that already has redemptions', function () {
 it('lets an admin deactivate a used code instead of deleting it', function () {
     $admin = actingAsPromoAdmin();
     $promoCode = PromoCode::create(['code' => 'USED2', 'percentage' => 10, 'active' => true]);
-    $booking = \App\Models\Booking::factory()->create();
+    $booking = Booking::factory()->create();
     $promoCode->redemptions()->create(['booking_id' => $booking->id, 'discount_cents' => 1000]);
 
     $this->actingAs($admin)->put("/admin/promo-codes/{$promoCode->id}", [

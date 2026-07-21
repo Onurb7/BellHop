@@ -13,9 +13,7 @@ class PaymentAutoChargeFailedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Booking $booking, public int $balanceDueCents, public string $payUrl)
-    {
-    }
+    public function __construct(public Booking $booking, public int $balanceDueCents, public string $payUrl) {}
 
     public function envelope(): Envelope
     {
