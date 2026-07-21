@@ -57,6 +57,20 @@ jobs:
 
       - uses: ramsey/composer-install@v3
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      # Feature tests that assert on a full Inertia page render (not just a
+      # JSON/XHR response) go through resources/views/app.blade.php, whose
+      # @vite directive needs a real public/build/manifest.json to resolve
+      # asset URLs — it errors out otherwise, even though the tests never
+      # execute any JS. Locally this is a non-issue since a manifest already
+      # sits on disk (gitignored, built once and left there); CI starts from
+      # a clean checkout every time.
+      - run: npm run build
+
       - run: cp .env.example .env
       - run: php artisan key:generate --ansi
 
