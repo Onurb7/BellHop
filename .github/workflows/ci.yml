@@ -39,6 +39,12 @@ jobs:
       DB_PASSWORD: secret
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
+      # Real Stripe test-mode secret key — the test suite deliberately hits
+      # Stripe's real sandbox (customer/payment-method/refund/off-session
+      # charge creation), it isn't mocked. Same key as your local .env's
+      # STRIPE_SECRET, added as a repo secret in GitHub Settings > Secrets
+      # and variables > Actions.
+      STRIPE_SECRET: ${{ secrets.STRIPE_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
