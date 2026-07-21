@@ -1,0 +1,20 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — never commit it, it holds your API token.
+
+hcloud_token = "your-hetzner-api-token-here"
+
+# Your current trusted IP(s), in CIDR form. Find yours with:
+#   curl -4 ifconfig.me
+# Add more entries (e.g. a second location while travelling) as a list —
+# each just needs `terraform apply` to take effect, no server downtime.
+admin_ipv4_cidrs = [
+  "203.0.113.4/32",
+]
+
+# ssh_public_key_path defaults to ./bellhop_deploy_key.pub — generate the
+# dedicated deploy keypair first (see infra/README.md), don't point this at
+# your personal ~/.ssh key.
+
+# cloudflare_ipv4_cidrs / cloudflare_ipv6_cidrs already have sane defaults
+# in variables.tf; only override here if Cloudflare's published ranges have
+# changed since 2026-07-21.
