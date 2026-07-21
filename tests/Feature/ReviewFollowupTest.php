@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 function staffChecksOut(): array
@@ -36,17 +37,17 @@ it('sends the follow-up and stamps sent_at only for reviews whose send_at has pa
 
     $due = Review::create([
         'booking_id' => Booking::factory()->create()->id,
-        'uuid' => \Illuminate\Support\Str::uuid(),
+        'uuid' => Str::uuid(),
         'send_at' => now()->subDay(),
     ]);
     $notYetDue = Review::create([
         'booking_id' => Booking::factory()->create()->id,
-        'uuid' => \Illuminate\Support\Str::uuid(),
+        'uuid' => Str::uuid(),
         'send_at' => now()->addDays(2),
     ]);
     $alreadySent = Review::create([
         'booking_id' => Booking::factory()->create()->id,
-        'uuid' => \Illuminate\Support\Str::uuid(),
+        'uuid' => Str::uuid(),
         'send_at' => now()->subDays(2),
         'sent_at' => now()->subDay(),
     ]);

@@ -1,6 +1,9 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Mail\BookingCancelledNonPaymentMail;
+use App\Mail\PaymentAutoChargeFailedMail;
+use App\Mail\PaymentReminderMail;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Services\StripePaymentService;
@@ -77,7 +80,7 @@ it('emails the guest and stops retrying when the off-session charge is declined'
     $booking = $booking->fresh();
     expect($booking->balance_due_at)->toBeNull()
         ->and($booking->balance_collection_failed_at)->not->toBeNull();
-    Mail::assertSent(\App\Mail\PaymentAutoChargeFailedMail::class);
+    Mail::assertSent(PaymentAutoChargeFailedMail::class);
 });
 
 it('sends a payment reminder instead of charging when no card was saved', function () {
@@ -103,7 +106,7 @@ it('sends a payment reminder instead of charging when no card was saved', functi
     $booking = $booking->fresh();
     expect($booking->balance_due_at)->toBeNull()
         ->and($booking->balance_collection_failed_at)->not->toBeNull();
-    Mail::assertSent(\App\Mail\PaymentReminderMail::class, fn ($mail) => $mail->willAutoCancel === true);
+    Mail::assertSent(PaymentReminderMail::class, fn ($mail) => $mail->willAutoCancel === true);
 });
 
 it('cancels a confirmed booking whose balance collection failed more than 24 hours ago', function () {
@@ -143,7 +146,7 @@ it('cancels a confirmed booking whose balance collection failed more than 24 hou
     expect($overdue->fresh()->status)->toBe(BookingStatus::Cancelled)
         ->and($withinGrace->fresh()->status)->toBe(BookingStatus::Confirmed)
         ->and($paidInTheMeantime->fresh()->status)->toBe(BookingStatus::Confirmed);
-    Mail::assertSent(\App\Mail\BookingCancelledNonPaymentMail::class, 1);
+    Mail::assertSent(BookingCancelledNonPaymentMail::class, 1);
 });
 
 it('reminds a checked-out booking with an unpaid balance but never threatens cancellation', function () {
@@ -169,9 +172,9 @@ it('reminds a checked-out booking with an unpaid balance but never threatens can
     $this->artisan('bookings:remind-checked-out-balances')->assertSuccessful();
 
     Mail::assertSent(
-        \App\Mail\PaymentReminderMail::class,
+        PaymentReminderMail::class,
         fn ($mail) => $mail->booking->is($unpaid) && $mail->willAutoCancel === false
     );
-    Mail::assertSent(\App\Mail\PaymentReminderMail::class, 1);
+    Mail::assertSent(PaymentReminderMail::class, 1);
     expect($unpaid->fresh()->last_reminder_type)->toBe('payment');
 });

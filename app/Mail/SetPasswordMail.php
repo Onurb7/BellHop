@@ -13,9 +13,7 @@ class SetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public User $user, public string $token)
-    {
-    }
+    public function __construct(public User $user, public string $token) {}
 
     public function envelope(): Envelope
     {

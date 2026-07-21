@@ -1,0 +1,1045 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CancelUnpaidBalances.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Console/Commands/ChargeDueBalances.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RemindCheckedOutBalances.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guest\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/SendReviewFollowups.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/PricingRuleController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/Admin/PricingRuleController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/Admin/PromoCodeController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PromoCode\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/PromoCodeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$check_in\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$check_out\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guest\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$room\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\Review\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/RoomController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/Admin/RoomController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Room\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/RoomController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/Admin/ServiceController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Service\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/ServiceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/CalendarController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CalendarController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/CalendarController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Booking\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/CalendarController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Room\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/CalendarController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$roomType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:bookings\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method gt\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method lt\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_cents\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$floor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kind\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$roomType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Call to function abort_unless\(\) with arguments false, 422 and ''Services can only…'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\BookingStatus\:\:Cancelled, App\\Enums\\BookingStatus\:\:NoShow\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\BookingStatus\:\:Confirmed, App\\Enums\\BookingStatus\:\:CheckedIn\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Cannot call method diffInDays\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Service\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ServicePricingType\:\:PerNight will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/GuestReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InvoiceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$number\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$roomType\.$#'
+			identifier: property.notFound
+			count: 8
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Call to function abort_if\(\) with arguments false, 422 and ''This reservation…'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Call to function abort_if\(\) with arguments true, 422 and ''This reservation is…'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Cannot call method diffInDays\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Public\\BookingController\:\:resolveAuthenticatedGuest\(\) should return App\\Models\\Guest but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Service\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Parameter \#2 \$checkIn of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects Carbon\\Carbon, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Parameter \#3 \$checkOut of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects Carbon\\Carbon, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:Confirmed will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:PendingPayment will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 4
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingStatus\:\:PendingPayment will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ServicePricingType\:\:PerNight will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Http/Controllers/Public/BookingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$check_in\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Public/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$check_out\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Public/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$room\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Public/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$base_rate_cents\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_occupancy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Call to function abort_unless\(\) with false and 404 will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\RoomStatus\:\:Active will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Public/RoomCatalogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_cents\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$floor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$kind\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$number\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$roomType\.$#'
+			identifier: property.notFound
+			count: 11
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$room_type_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stripe_payment_intent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Call to function abort_unless\(\) with arguments false, 422 and ''Services can only…'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\BookingStatus\:\:Confirmed, App\\Enums\\BookingStatus\:\:CheckedIn\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Cannot call method diffForHumans\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Cannot call method diffInDays\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Service\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\Booking\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#1 \$roomType of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects App\\Models\\RoomType, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#2 \$checkIn of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects Carbon\\Carbon, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Parameter \#3 \$checkOut of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects Carbon\\Carbon, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 3
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingStatus\:\:Cancelled will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingStatus\:\:PendingPayment will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ServicePricingType\:\:PerNight will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Http/Controllers/ReservationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:charges\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasInvoice\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:payments\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Parameter \#1 \$booking of job class App\\Jobs\\GenerateBookingInvoice constructor expects App\\Models\\Booking in App\\Jobs\\GenerateBookingInvoice\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Parameter \#1 \$guest of method App\\Services\\StripePaymentService\:\:attachPaymentMethodToNewCustomer\(\) expects App\\Models\\Guest, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Parameter \#1 \$intent of method App\\Http\\Controllers\\StripeWebhookController\:\:handlePaymentSucceeded\(\) expects Stripe\\PaymentIntent, Stripe\\StripeObject given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Parameter \#1 \$refund of method App\\Http\\Controllers\\StripeWebhookController\:\:handleRefundUpdated\(\) expects Stripe\\Refund, Stripe\\StripeObject given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingStatus\:\:PendingPayment will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/StripeWebhookController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>date_kind" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Requests/Admin/PricingRuleRequest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>is_template" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Requests/Admin/PricingRuleRequest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/GenerateBookingInvoice.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\BookingStatus\:\:PendingPayment, App\\Enums\\BookingStatus\:\:Confirmed\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:contains\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|int\|string, Closure\(App\\Models\\BookingPayment\)\: false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:CheckedIn will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:Confirmed will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:PendingPayment will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingPaymentKind\:\:Balance will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\BookingPaymentKind\:\:Deposit will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 5
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver\:\:performOnCollections\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Room.php
+
+		-
+			message: '#^Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver\:\:performOnCollections\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Service.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Cannot call method diffInDays\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Parameter \#1 \$roomType of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects App\\Models\\RoomType, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\BookingStatus\:\:CheckedOut will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/DemoActivitySeeder.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/PromoCodeService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ServicePricingType\:\:PerNight will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/PromoCodeService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_occupancy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Parameter \#1 \$roomType of method App\\Services\\SeasonalPricingService\:\:nightlyRateCents\(\) expects App\\Models\\RoomType, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Parameter \#1 \$roomType of method App\\Services\\SeasonalPricingService\:\:totalRoomChargeCents\(\) expects App\\Models\\RoomType, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/RoomAvailabilityService.php
+
+		-
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Cannot call method diffInDays\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Method App\\Services\\SeasonalPricingService\:\:windowsOverlap\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Parameter \#2 \$date of method App\\Services\\SeasonalPricingService\:\:candidateInstances\(\) expects Carbon\\Carbon, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\PricingRuleDateKind\:\:DateRange will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\PricingRuleDateKind\:\:DayOfWeek will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/SeasonalPricingService.php
+
+		-
+			message: '#^Method App\\Services\\ServicePurchaseService\:\:purchase\(\) should return App\\Models\\BookingCharge but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/ServicePurchaseService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ServicePricingType\:\:PerNight will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/ServicePurchaseService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Guest\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/StripePaymentService.php

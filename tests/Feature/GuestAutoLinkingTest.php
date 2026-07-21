@@ -1,10 +1,13 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Mail\ExistingAccountMail;
 use App\Models\Booking;
 use App\Models\Guest;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -94,11 +97,11 @@ it('keeps an existing-email guest unlinked and never auto-logs them in after pay
 
     expect($booking->guest->fresh()->user_id)->toBeNull();
 
-    $confirmationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute('booking.confirmation', now()->addHours(2), ['booking' => $booking]);
+    $confirmationUrl = URL::temporarySignedRoute('booking.confirmation', now()->addHours(2), ['booking' => $booking]);
     $this->get($confirmationUrl);
 
     $this->assertGuest();
-    Mail::assertSent(\App\Mail\ExistingAccountMail::class);
+    Mail::assertSent(ExistingAccountMail::class);
 });
 
 it('provisions a brand-new account and auto-logs the guest in after payment for a new email', function () {
@@ -120,9 +123,9 @@ it('provisions a brand-new account and auto-logs the guest in after payment for 
     expect($newUser)->not->toBeNull();
     expect($booking->guest->fresh()->user_id)->toBe($newUser->id);
 
-    $confirmationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute('booking.confirmation', now()->addHours(2), ['booking' => $booking]);
+    $confirmationUrl = URL::temporarySignedRoute('booking.confirmation', now()->addHours(2), ['booking' => $booking]);
     $this->get($confirmationUrl);
 
     $this->assertAuthenticatedAs($newUser);
-    expect(\Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', 'brand.new@example.test')->exists())->toBeTrue();
+    expect(DB::table('password_reset_tokens')->where('email', 'brand.new@example.test')->exists())->toBeTrue();
 });

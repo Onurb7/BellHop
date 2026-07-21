@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Services\RoomAvailabilityService;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -13,7 +14,7 @@ use Spatie\Permission\Models\Role;
  * asserts on page props, only on resulting DB/redirect state) — scrapes
  * the same embedded `data-page` JSON blob a real browser hydrates from.
  */
-function inertiaProps(\Illuminate\Testing\TestResponse $response): array
+function inertiaProps(TestResponse $response): array
 {
     preg_match('#<script data-page="app" type="application/json">(.*?)</script>#s', $response->getContent(), $matches);
 

@@ -1,6 +1,7 @@
 *.log
 .DS_Store
 /.claude
+/build
 .env
 .env.backup
 .env.production

@@ -4,9 +4,9 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\Currency;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
-use Illuminate\Support\Str;
 
 class RoomTypeRequest extends FormRequest
 {

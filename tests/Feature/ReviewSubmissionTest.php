@@ -3,12 +3,13 @@
 use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 
 /**
  * Scrapes the embedded Inertia `data-page` JSON blob, same helper
  * established in BookingDepositPlanTest.php.
  */
-function reviewInertiaProps(\Illuminate\Testing\TestResponse $response): array
+function reviewInertiaProps(TestResponse $response): array
 {
     preg_match('#<script data-page="app" type="application/json">(.*?)</script>#s', $response->getContent(), $matches);
 

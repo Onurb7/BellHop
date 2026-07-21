@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\BookingChargeCategory;
-use App\Enums\BookingPaymentKind;
 use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\BookingPayment;
@@ -9,6 +8,7 @@ use App\Models\Guest;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
 use App\Services\StripePaymentService;
+use Illuminate\Testing\TestResponse;
 use Stripe\Customer;
 
 /**
@@ -18,7 +18,7 @@ use Stripe\Customer;
  * end to end — no network call to Stripe involved, only inbound webhook
  * handling is under test.
  */
-function postStripeWebhook(array $payload, ?string $secret = null): \Illuminate\Testing\TestResponse
+function postStripeWebhook(array $payload, ?string $secret = null): TestResponse
 {
     $secret ??= config('services.stripe.webhook_secret');
     $timestamp = time();
@@ -97,7 +97,7 @@ it('saves the card and schedules the balance auto-charge when the guest consente
     $this->mock(StripePaymentService::class, function ($mock) {
         $mock->shouldReceive('attachPaymentMethodToNewCustomer')
             ->once()
-            ->with(\Mockery::on(fn ($guest) => $guest->is($this->guest)), 'pm_test_1')
+            ->with(Mockery::on(fn ($guest) => $guest->is($this->guest)), 'pm_test_1')
             ->andReturn(Customer::constructFrom(['id' => 'cus_test_1']));
     });
 
