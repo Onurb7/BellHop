@@ -1,0 +1,48 @@
+# Production overlay — swaps locally-built images for pre-built GHCR images.
+# A real deploy runs:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+#
+# docker-compose.yml on its own is still fully buildable, for local
+# prod-shaped testing (`docker compose -f docker-compose.yml up -d --build`).
+
+services:
+  app:
+    build: !reset null
+    image: ghcr.io/onurb7/bellhop-app:${IMAGE_TAG:-latest}
+
+  # worker/scheduler never had their own build: block in docker-compose.yml
+  # (they inherit image: bellhop-app via the x-app anchor) — only image:
+  # needs overriding here.
+  worker:
+    image: ghcr.io/onurb7/bellhop-app:${IMAGE_TAG:-latest}
+
+  scheduler:
+    image: ghcr.io/onurb7/bellhop-app:${IMAGE_TAG:-latest}
+
+  nginx:
+    build: !reset null
+    image: ghcr.io/onurb7/bellhop-nginx:${IMAGE_TAG:-latest}
+    # !override, not a plain list — Compose concatenates list-valued keys
+    # like `ports:` across files by default (unlike dict-valued keys such
+    # as `environment:`, which merge by key), so a plain override here
+    # would've left the base file's dev-oriented ${APP_PORT:-8080}:80
+    # mapping still bound alongside these two. Confirmed the bug live via
+    # `docker compose config` before fixing it.
+    ports: !override
+      - "80:80"
+      - "443:443"
+    volumes:
+      - storage_app:/var/www/html/storage/app
+      - ./docker/nginx/prod.tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/tls:/etc/nginx/tls:ro
+
+  # No image/build override needed — the base docker-compose.yml's mailpit
+  # definition (public axllent/mailpit image, no build: block) is used
+  # as-is. Kept running in production as the real mail sink (MAIL_MAILER=
+  # smtp/MAIL_HOST=mailpit in the box's .env, identical to local dev)
+  # instead of Resend, since Resend's free tier is capped at one verified
+  # domain and that slot is already used elsewhere. Its web UI (port 8025)
+  # is firewalled to admin_ipv4_cidrs only in infra/firewall.tf — it shows
+  # the full content of every email the app sends, including password-
+  # reset links, so it must never be open to the public internet.
