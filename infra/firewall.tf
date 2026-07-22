@@ -1,11 +1,19 @@
 resource "hcloud_firewall" "web" {
   name = "bellhop-web"
 
+  # Open to all source IPs, not just admin_ipv4_cidrs — GitHub Actions'
+  # hosted runners come from a huge, constantly-changing pool of Azure IPs
+  # that can never be usefully allowlisted, confirmed live (the deploy job
+  # timed out here on its first real run). Password auth was never enabled
+  # on this box (cloud-init only ever installs an SSH public key, no
+  # `passwd:`), so key-only auth is the actual security boundary here, not
+  # the source-IP restriction — this matches how the overwhelming majority
+  # of "deploy via SSH from CI" setups work in practice.
   rule {
     direction  = "in"
     protocol   = "tcp"
     port       = "22"
-    source_ips = var.admin_ipv4_cidrs
+    source_ips = ["0.0.0.0/0", "::/0"]
   }
 
   # The site is only reachable on 80/443 through Cloudflare's proxy — the
