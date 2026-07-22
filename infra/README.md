@@ -1,9 +1,12 @@
 # Bellhop infrastructure (Terraform + Hetzner Cloud)
 
-Provisions the single production VPS: a Hetzner Cloud CX22 (2 vCPU/4GB RAM,
-~€3.79/mo), a firewall restricting SSH to your own IP(s) and 80/443 to
-Cloudflare's published ranges only, and a cloud-init script that installs
-Docker, creates a `deploy` user, sets up swap, and clones the repo.
+Provisions the single production VPS: a Hetzner Cloud CX23 (2 vCPU/4GB RAM,
+~€6.86/mo VAT-included as of 2026-07-22 — Hetzner's "Cost-Optimized" tier,
+meaning capacity genuinely fluctuates by location; see the comment on
+`server_type` in `variables.tf`), a firewall restricting SSH to your own
+IP(s) and 80/443 to Cloudflare's published ranges only, and a cloud-init
+script that installs Docker, creates a `deploy` user, sets up swap, and
+clones the repo.
 
 This directory only provisions the box. It does not install TLS
 certificates, publish images, or deploy the app — those are later phases.
@@ -77,7 +80,7 @@ swapping one out, and remove it later once it's no longer needed.
   gitignored, which is fine for solo work. Don't lose it; if this ever
   needs a second operator, that's the point to add an S3-compatible remote
   backend (e.g. Hetzner Object Storage).
-- No Hetzner Floating IP — a CX22 ships with a stable public IP by default,
+- No Hetzner Floating IP — a CX23 ships with a stable public IP by default,
   which is what DNS points at directly.
 - No passwordless sudo for `deploy` — the deploy workflow only ever needs
   `docker compose` (covered by `docker` group membership). Anything

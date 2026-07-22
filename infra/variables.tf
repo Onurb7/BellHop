@@ -13,7 +13,16 @@ variable "server_name" {
 variable "server_type" {
   description = "Hetzner server plan."
   type        = string
-  default     = "cx22" # 2 vCPU / 4GB RAM / 40GB disk, ~€3.79/mo
+  default     = "cx23" # 2 vCPU / 4GB RAM / 40GB disk. Hetzner renamed/
+  # superseded CX22 with this plan in an April 2026 lineup refresh (same
+  # specs) and raised prices further in June 2026 — real price as of
+  # 2026-07-22 is ~€6.86/mo VAT-included, not the older ~€3.79-4.49
+  # figures still floating around various pricing pages. It's also
+  # "Cost-Optimized" tier (Hetzner's own label), meaning capacity is
+  # genuinely limited and fluctuates by location/day — confirmed
+  # unavailable in Falkenstein, then available again in Nuremberg
+  # (var.location's default) within the same day. If `apply` ever fails
+  # on a capacity error, just retry shortly or try fsn1/hel1.
 }
 
 variable "location" {

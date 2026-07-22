@@ -11,6 +11,7 @@ infra/terraform.tfvars
 infra/bellhop_deploy_key
 infra/bellhop_deploy_key.pub
 infra/crash.log
+infra/tfplan
 .env
 .env.backup
 .env.production
