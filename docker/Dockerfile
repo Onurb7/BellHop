@@ -54,6 +54,23 @@ COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/99-xdebug.ini
 CMD ["php-fpm"]
 
 # ---------------------------------------------------------------------------
+# frontend-build: compiles Vite assets (Vue/Inertia/Tailwind) — neither the
+# prod PHP-FPM image nor nginx-prod otherwise ever runs `npm run build` at
+# all, so without this stage the shipped image has no public/build/
+# manifest.json and every page 500s ("Vite manifest not found"), confirmed
+# live on the very first real deploy.
+# ---------------------------------------------------------------------------
+FROM node:20-alpine AS frontend-build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ---------------------------------------------------------------------------
 # build: installs PHP deps and bakes the application code into the image
 # ---------------------------------------------------------------------------
 FROM base AS build
@@ -67,6 +84,7 @@ RUN composer install \
         --no-progress
 
 COPY . .
+COPY --from=frontend-build /app/public/build ./public/build
 RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
