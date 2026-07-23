@@ -4,6 +4,9 @@
 
 **A single-tenant boutique hotel booking platform — built to demonstrate senior Laravel architecture, not to be a SaaS product.**
 
+**[Live demo → bellhop-app.com](https://bellhop-app.com)** — deployed via the CI/CD pipeline described below, redeploys itself on every merge to `main`.
+
+![CI](https://github.com/Onurb7/BellHop/actions/workflows/ci.yml/badge.svg)
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
@@ -12,6 +15,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-Hetzner_Cloud-844FBA?logo=terraform&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 </div>
@@ -273,6 +277,10 @@ instead of repeating that pattern.
 | Transactional email | Resend |
 | Exchange rates | Frankfurter (free, keyless) |
 | Local/prod parity | Docker Compose (nginx, PHP-FPM, Postgres, Redis, Horizon, scheduler, Mailpit for dev) |
+| CI | GitHub Actions (Pest, Pint, Larastan, Vitest) |
+| CD | GitHub Actions → GHCR → SSH deploy, on every merge to `main` |
+| Infrastructure | Terraform, provisioning a Hetzner Cloud VPS (see `infra/`) |
+| DNS / TLS / CDN | Cloudflare (proxied, Full-strict SSL, Origin Certificate) |
 
 ## Current status
 
@@ -319,11 +327,70 @@ designed but not yet built:
   above — real money and invoices always stay in USD
 - Purchasable services described above — booking-time selection and
   post-booking self-service purchase, both by guest and staff
+- CI/CD pipeline and Terraform-provisioned production deployment
+  described below — the app is live and redeploys itself automatically
 
 Every piece of domain functionality originally scoped in the domain plan
 (kept outside this repo since it's working notes, not a deliverable) is
 now shipped. I'd rather show a smaller surface area that's actually
 finished and correct than a large one that only looks done.
+
+Beyond the domain plan itself, a full CI/CD pipeline and Infrastructure-as-
+Code deployment are also shipped and live — see below.
+
+## Deployment & CI/CD
+
+**[bellhop-app.com](https://bellhop-app.com) is a real, self-managed
+deployment**, not a PaaS one-click deploy — showcasing infrastructure
+knowledge is as much a goal of this portfolio piece as the application
+code itself.
+
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`) runs on every PR and
+  push to `main`: Pest (backend tests, against a real Postgres service
+  container — SQLite can't represent the `bookings` exclusion
+  constraint), Pint (style, blocking), Larastan/PHPStan level 5 (existing
+  violations grandfathered via a baseline, new code held to the bar), and
+  Vitest (frontend).
+- **CD**, on merge to `main` only: builds the `prod`/`nginx-prod` Docker
+  targets, pushes them to GitHub Container Registry tagged with the
+  commit SHA (not just `:latest` — a real rollback path, just re-export a
+  previous SHA and re-run), then SSHes into the production box and runs
+  `docker compose pull && up -d && migrate --force`. Fully unattended —
+  the same box was confirmed reachable and redeployed end to end after
+  every one of the real bugs listed below.
+- **Infrastructure is Terraform** (`infra/`), not hand-clicked — a Hetzner
+  Cloud VPS (CX23, 4GB RAM), a firewall (SSH open — GitHub-hosted
+  runners have no stable IP range to allowlist, so key-only auth is the
+  actual security boundary here, not source-IP restriction; 80/443
+  restricted to Cloudflare's published ranges only, so the origin is
+  unreachable except through Cloudflare's proxy; a separate rule locks
+  Mailpit's admin UI to a personal trusted-IP list only), and a cloud-init
+  script that installs Docker, creates a non-root deploy user, and sets
+  up swap. Local state, no remote backend — fine for solo work.
+- **DNS/TLS/CDN is Cloudflare**, not Route53/CloudFront — free DNS, proxy,
+  and a 15-year Origin Certificate terminating TLS at nginx (Full-strict
+  mode), chosen specifically because it needs zero renewal automation,
+  unlike a Let's-Encrypt/Caddy setup would.
+- **Production's mail sink is Mailpit**, not a transactional-email
+  provider — every free tier hit a real limit (Resend caps free accounts
+  at one verified domain, already used elsewhere), so rather than pay for
+  email on a near-zero-traffic demo, production points at its own
+  Mailpit instance instead, firewalled to a personal IP allowlist only
+  (it shows the full content of every email the app sends, including
+  password-reset links — never something to leave open to the public
+  internet).
+
+Three real bugs only surfaced on the actual first deploy, invisible in
+local dev because the dev Compose override bind-mounts the whole repo
+into every container (masking exactly the kind of per-service-image
+issue a real split-container deployment exposes): `fakerphp/faker` was
+`require-dev`-only despite the monthly demo-reseed job needing it *in
+production*; neither Docker build stage ever actually ran `npm run
+build`, so the shipped image had no compiled frontend at all; and Spatie
+Media Library uploads 404'd because the `public/storage` symlink
+`artisan storage:link` creates only ever exists inside the container
+that runs it — nginx is a separate image/container and can never see it,
+so it now serves `/storage/` directly from the shared volume instead.
 
 ## Getting started
 
